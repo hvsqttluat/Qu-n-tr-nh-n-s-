@@ -7,6 +7,7 @@ import { EmployeeView } from './EmployeeView';
 import { NotificationView } from './NotificationView';
 import { LeavePayrollView } from './LeavePayrollView';
 import { ProfileView } from './ProfileView';
+import { WpfExplorerView } from './WpfExplorerView';
 import {
   Home,
   Users,
@@ -24,7 +25,9 @@ import {
   ChevronRight,
   Shield,
   Search,
-  Settings
+  Settings,
+  Monitor,
+  Code
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -128,6 +131,7 @@ export function Layout({
   // Sidebar items config
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, visible: true },
+    { id: 'wpf_ide', label: 'C# WPF Desktop IDE', icon: Monitor, visible: true },
     { id: 'employees', label: 'Nhân viên', icon: Users, visible: showEmployeeMenu },
     { id: 'departments', label: 'Phòng ban', icon: Grid, visible: showDeptPosContractMenu },
     { id: 'positions', label: 'Chức vụ', icon: Contact, visible: showDeptPosContractMenu },
@@ -270,6 +274,9 @@ export function Layout({
                 leaveRequests={leaveRequests}
                 contracts={contracts}
               />
+            )}
+            {activeTab === 'wpf_ide' && (
+              <WpfExplorerView />
             )}
             {activeTab === 'employees' && (
               <EmployeeView
