@@ -1,0 +1,8 @@
+{
+  "name": "Quản trị nhân sự ",
+  "description": "Hệ thống quản lý công việc doanh nghiệp tích hợp trợ lý ảo AI để tự động hóa quy trình và tối ưu hóa hiệu suất làm việc.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

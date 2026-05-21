@@ -1,0 +1,433 @@
+<UserControl x:Class="HRM_WPF_CNPM.Views.LeaveRequestView"
+             xmlns="http://schemas.microsoft.com/winfx/2000/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2000/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:local="clr-namespace:HRM_WPF_CNPM.Views"
+             xmlns:vm="clr-namespace:HRM_WPF_CNPM.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="#FAFAFA">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Page Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="QUẢN LÝ NGHỈ PHÉP" 
+                       FontSize="24" 
+                       FontWeight="Black" 
+                       Foreground="#2D3A2D"/>
+            <TextBlock Text="Nộp đơn xin nghỉ, tự động theo dõi số phép năm còn lại và quản lý tiến trình phê duyệt cấp Trung tá trở lên." 
+                       FontSize="12" 
+                       Foreground="Gray" 
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Command, Filters & Search Row -->
+        <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,0,0,16">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                
+                <!-- 1. Text Search Input -->
+                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ui:ControlHelper.PlaceholderText="Mã nhân viên, tên nhân viên, lý do..."
+                         HorizontalAlignment="Stretch"
+                         Width="220"
+                         Height="34"
+                         Margin="0,0,12,0"
+                         ui:ControlHelper.CornerRadius="6"/>
+
+                <!-- 2. Type Filter ComboBox -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="Loại nghỉ:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding LeaveTypeFilterList}"
+                              SelectedItem="{Binding SelectedLeaveTypeFilter}"
+                              Width="130"
+                              Height="34"
+                              ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- 3. Status Filter ComboBox -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="Trạng thái:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding StatusFilterList}"
+                              SelectedItem="{Binding SelectedStatusFilter}"
+                              Width="120"
+                              Height="34"
+                              ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- 4. Date Range Filters -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="Từ ngày:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <DatePicker SelectedDate="{Binding FilterFromDate, Mode=TwoWay}"
+                                Width="120"
+                                Height="34"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
+                    <TextBlock Text="Đến ngày:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <DatePicker SelectedDate="{Binding FilterToDate, Mode=TwoWay}"
+                                Width="120"
+                                Height="34"/>
+                </StackPanel>
+
+                <!-- 5. Reset & Reload Button -->
+                <Button Command="{Binding LoadLeaveRequestsCommand}"
+                        Content="🔄 TẢI LẠI"
+                        Background="#ECECEC"
+                        Foreground="#333"
+                        FontWeight="Bold"
+                        Height="34"
+                        Padding="12,0"
+                        ui:ControlHelper.CornerRadius="6"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- Main Body: Split View [DataGrid Left / Input Form Right] -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="2.2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Column 1: Leave Requests List -->
+            <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1" Padding="12" Margin="0,0,12,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid ItemsSource="{Binding LeaveRequests}"
+                              SelectedItem="{Binding SelectedLeaveRequest, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              RowHeight="42">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Nhân Viên" Binding="{Binding Employee.FullName}" Width="150" FontWeight="SemiBold"/>
+                            <DataGridTextColumn Header="Mã NV" Binding="{Binding Employee.EmployeeCode}" Width="80"/>
+                            <DataGridTextColumn Header="Loại Nghỉ" Binding="{Binding LeaveType}" Width="110"/>
+                            <DataGridTextColumn Header="Bắt Đầu" Binding="{Binding FromDate, StringFormat={}{0:dd/MM/yyyy}}" Width="95"/>
+                            <DataGridTextColumn Header="Kết Thúc" Binding="{Binding ToDate, StringFormat={}{0:dd/MM/yyyy}}" Width="95"/>
+                            <DataGridTextColumn Header="Số Ngày" Binding="{Binding TotalDays}" Width="70" ElementStyle="{StaticResource {x:Type TextBlock}}"/>
+                            
+                            <!-- Custom status cell template styling -->
+                            <DataGridTemplateColumn Header="Trạng thái" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" Margin="2">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Đã duyệt">
+                                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                                            <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Chờ duyệt">
+                                                            <Setter Property="Background" Value="#FFF9C4"/>
+                                                            <Setter Property="BorderBrush" Value="#FFF59D"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Từ chối">
+                                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                                            <Setter Property="BorderBrush" Value="#FFCDD2"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Đã hủy">
+                                                            <Setter Property="Background" Value="#F5F5F5"/>
+                                                            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            
+                                            <TextBlock Text="{Binding Status}" FontWeight="Bold" FontSize="11">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Đã duyệt">
+                                                                <Setter Property="Foreground" Value="#2E7D32"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Chờ duyệt">
+                                                                <Setter Property="Foreground" Value="#F57F17"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Từ chối">
+                                                                <Setter Property="Foreground" Value="#C62828"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Đã hủy">
+                                                                <Setter Property="Foreground" Value="#616161"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Grid.Row="1"
+                               Text="* Chọn một hồ sơ nghỉ phép từ bảng để tiến hành Sửa đổi, Hủy, Duyệt hoặc Từ chối."
+                               Foreground="Gray"
+                               FontStyle="Italic"
+                               FontSize="11"
+                               Margin="0,12,0,0"/>
+                </Grid>
+            </Border>
+
+            <!-- Column 2: Leave Request Form Details -->
+            <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1" Padding="16">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header Form -->
+                        <TextBlock Grid.Row="0" 
+                                   Text="📋 CHI TIẾT &amp; CẬP NHẬT ĐƠN PHÉP" 
+                                   FontSize="15" 
+                                   FontWeight="Black" 
+                                   Foreground="#2D3A2D" 
+                                   Margin="0,0,0,16"/>
+
+                        <!-- Alert banners -->
+                        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                            <!-- Error Notification Banner -->
+                            <Border Background="#FFEBEE" CornerRadius="6" Padding="12" Margin="0,0,0,8" BorderBrush="#FFCDD2" BorderThickness="1"
+                                    Visibility="{Binding ErrorMsg, Converter={x:Static ui:ControlHelper.StringToVisibilityConverter}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="⚠ " FontWeight="Bold" Foreground="#C62828" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding ErrorMsg}" Foreground="#C62828" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Success Notification Banner -->
+                            <Border Background="#E8F5E9" CornerRadius="6" Padding="12" Margin="0,0,0,8" BorderBrush="#C8E6C9" BorderThickness="1"
+                                    Visibility="{Binding SuccessMsg, Converter={x:Static ui:ControlHelper.StringToVisibilityConverter}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="✔ " FontWeight="Bold" Foreground="#2E7D32" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SuccessMsg}" Foreground="#2E7D32" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Input fields list -->
+                        <StackPanel Grid.Row="2" spacing="12">
+                            
+                            <!-- Employee Choice ComboBox -->
+                            <StackPanel>
+                                <TextBlock Text="Nhân sự xin phép nghỉ *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding Employees}"
+                                          SelectedItem="{Binding SelectedEmployeeForForm}"
+                                          IsEnabled="{Binding CanSelectEmployee}"
+                                          Height="34"
+                                          HorizontalAlignment="Stretch"
+                                          ui:ControlHelper.CornerRadius="6">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="[" FontWeight="Bold"/><TextBlock Text="{Binding EmployeeCode}" FontWeight="Bold" Foreground="#C5A059"/><TextBlock Text="]" FontWeight="Bold"/>
+                                                <TextBlock Text=" - "/>
+                                                <TextBlock Text="{Binding FullName}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                
+                                <!-- Annual Leave balance notifier -->
+                                <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,4,0,0">
+                                    <TextBlock Text="{Binding EmployeeRemainingLeaveText}" FontSize="11" Foreground="#4B5563" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Leave Type -->
+                            <StackPanel>
+                                <TextBlock Text="Loại hình nghỉ phép *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding LeaveTypeList}"
+                                          SelectedItem="{Binding EditingLeaveType}"
+                                          Height="34"
+                                          HorizontalAlignment="Stretch"
+                                          ui:ControlHelper.CornerRadius="6"/>
+                            </StackPanel>
+
+                            <!-- From Date & To Date -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                    <TextBlock Text="Từ ngày *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                    <DatePicker SelectedDate="{Binding EditingFromDate, Mode=TwoWay}"
+                                                Height="34" HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                    <TextBlock Text="Đến ngày *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                    <DatePicker SelectedDate="{Binding EditingToDate, Mode=TwoWay}"
+                                                Height="34" HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Calculated TotalDays -->
+                            <StackPanel>
+                                <TextBlock Text="Tổng số ngày nghỉ (Tự động)" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding EditingTotalDays, Mode=OneWay}"
+                                         IsReadOnly="True"
+                                         Background="#F3F4F6"
+                                         Height="34"
+                                         ui:ControlHelper.CornerRadius="6"/>
+                            </StackPanel>
+
+                            <!-- Reason -->
+                            <StackPanel>
+                                <TextBlock Text="Lý do xin nghỉ *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding EditingReason, UpdateSourceTrigger=PropertyChanged}"
+                                         ui:ControlHelper.PlaceholderText="Ví dụ: Đi khám bệnh đột xuất, làm thủ tục hành chính, lò rèn việc tư..."
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         Height="55"
+                                         ui:ControlHelper.CornerRadius="6"/>
+                            </StackPanel>
+
+                            <!-- Reject Reason (Input for HR/Manager rejection) -->
+                            <StackPanel>
+                                <TextBlock Text="Lý do từ chối (Chỉ dùng khi Từ chối)" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding EditingRejectReason, UpdateSourceTrigger=PropertyChanged}"
+                                         ui:ControlHelper.PlaceholderText="Nhập lý do tại đây trước khi chọn nút TỪ CHỐI..."
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         Height="55"
+                                         ui:ControlHelper.CornerRadius="6"/>
+                            </StackPanel>
+
+                            <Separator Margin="0,8,0,8" Background="#E0E0E0"/>
+
+                            <!-- Action Buttons Grid -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Nộp đơn (Add) Button -->
+                                <Button Grid.Row="0" Grid.Column="0"
+                                        Command="{Binding AddCommand}"
+                                        Content="➕ NỘP ĐƠN"
+                                        Background="#2D3A2D"
+                                        Foreground="#FFFFFF"
+                                        FontWeight="Black"
+                                        FontSize="11.5"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,0,4,8"
+                                        ui:ControlHelper.CornerRadius="6"/>
+
+                                <!-- Sửa đơn (Update) Button -->
+                                <Button Grid.Row="0" Grid.Column="1"
+                                        Command="{Binding UpdateCommand}"
+                                        Content="💾 CẬP NHẬT"
+                                        Background="#1a241a"
+                                        Foreground="#C5A059"
+                                        FontWeight="Black"
+                                        FontSize="11.5"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="4,0,0,8"
+                                        ui:ControlHelper.CornerRadius="6"/>
+
+                                <!-- Hủy đơn Button -->
+                                <Button Grid.Row="1" Grid.Column="0"
+                                        Command="{Binding CancelCommand}"
+                                        Content="🚫 HỦY ĐƠN"
+                                        Background="#FFF4F4"
+                                        Foreground="#C62828"
+                                        FontWeight="Black"
+                                        FontSize="11.5"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,0,4,8"
+                                        ui:ControlHelper.CornerRadius="6"/>
+
+                                <!-- Làm trắng Form Button -->
+                                <Button Grid.Row="1" Grid.Column="1"
+                                        Command="{Binding ResetFormCommand}"
+                                        Content="🧹 LÀM TRẮNG"
+                                        Background="#ECECEC"
+                                        Foreground="#333"
+                                        FontWeight="Black"
+                                        FontSize="11.5"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="4,0,0,8"
+                                        ui:ControlHelper.CornerRadius="6"/>
+
+                                <!-- Duyệt Đơn (Approve) Button -->
+                                <Button Grid.Row="2" Grid.Column="0"
+                                        Command="{Binding ApproveCommand}"
+                                        Content="✔ DUYỆT ĐƠN"
+                                        Background="#1B5E20"
+                                        Foreground="#FFFFFF"
+                                        FontWeight="Black"
+                                        FontSize="11.5"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,0,4,0"
+                                        Visibility="{Binding CanApproveReject, Converter={StaticResource BoolToVisConverter}}"
+                                        ui:ControlHelper.CornerRadius="6"/>
+
+                                <!-- Từ Chối Đơn (Reject) Button -->
+                                <Button Grid.Row="2" Grid.Column="1"
+                                        Command="{Binding RejectCommand}"
+                                        Content="❌ TỪ CHỐI"
+                                        Background="#B71C1C"
+                                        Foreground="#FFFFFF"
+                                        FontWeight="Black"
+                                        FontSize="11.5"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="4,0,0,0"
+                                        Visibility="{Binding CanApproveReject, Converter={StaticResource BoolToVisConverter}}"
+                                        ui:ControlHelper.CornerRadius="6"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

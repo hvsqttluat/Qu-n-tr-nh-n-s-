@@ -1,0 +1,150 @@
+<UserControl x:Class="HRM_WPF_CNPM.Views.EmployeeView"
+             xmlns="http://schemas.microsoft.com/winfx/2000/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2000/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:local="clr-namespace:HRM_WPF_CNPM.Views"
+             xmlns:vm="clr-namespace:HRM_WPF_CNPM.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="900"
+             Background="#FAFAFA">
+
+    <UserControl.Resources>
+        <!-- Converter to check if viewmodel is null and switch panels -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+        
+        <!-- Standard Data Templates to automatically map ViewModels representing Views -->
+        <DataTemplate DataType="{x:Type vm:EmployeeDetailViewModel}">
+            <local:EmployeeDetailView/>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Dynamic Router using ContentPresenter for nested sub-VM routing -->
+        <ContentPresenter Content="{Binding CurrentDetailViewModel}">
+            <ContentPresenter.Style>
+                <Style TargetType="ContentPresenter">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Style.Triggers>
+                        <!-- If CurrentDetailViewModel is null, hide the presenter -->
+                        <DataTrigger Binding="{Binding CurrentDetailViewModel}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ContentPresenter.Style>
+        </ContentPresenter>
+
+        <!-- Primary List View - Only visible if CurrentDetailViewModel is null -->
+        <Grid Margin="24">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <!-- Show list only when detail is null -->
+                        <DataTrigger Binding="{Binding CurrentDetailViewModel}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Page Title -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                <TextBlock Text="DANH SÁCH QUÂN SỐ CÁN BỘ - NHÂN SỨ" 
+                           FontSize="24" 
+                           FontWeight="Black" 
+                           Foreground="#2D3A2D"/>
+                <TextBlock Text="Cấu ban quản trị hồ sơ, sắp xếp phòng ban và điều phối nghiệp vụ" 
+                           FontSize="12" 
+                           Foreground="Gray" 
+                           Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <!-- Command & Filter Row -->
+            <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Filter search -->
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             ui:ControlHelper.PlaceholderText="Lọc theo tên, mã số quân nhân, email..."
+                             Width="280" 
+                             HorizontalAlignment="Left"
+                             Height="34"
+                             ui:ControlHelper.CornerRadius="6"/>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" spacing="8">
+                        <!-- Command action "Xem chi tiết" -->
+                        <Button Command="{Binding ViewDetailCommand}" 
+                                Content="🔎 XEM CHI TIẾT HỒ SƠ" 
+                                Background="#2D3A2D" 
+                                Foreground="#FFFFFF" 
+                                FontWeight="Bold"
+                                Height="34"
+                                Padding="16,0"
+                                ui:ControlHelper.CornerRadius="6"/>
+                        
+                        <Button Command="{Binding LoadEmployeesCommand}" 
+                                Content="🔄 LÀM MỚI" 
+                                Background="#ECECEC" 
+                                Foreground="#333" 
+                                FontWeight="Bold"
+                                Height="34"
+                                Padding="12,0"
+                                ui:ControlHelper.CornerRadius="6"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main DataGrid Container -->
+            <Border Grid.Row="2" Background="#FFFFFF" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid ItemsSource="{Binding Employees}" 
+                              SelectedItem="{Binding SelectedEmployee, Mode=TwoWay}"
+                              AutoGenerateColumns="False" 
+                              IsReadOnly="True" 
+                              Background="Transparent"
+                              BorderThickness="0"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              RowHeight="40">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Mã Nhân sự" Binding="{Binding EmployeeCode}" Width="110" FontWeight="Bold"/>
+                            <DataGridTextColumn Header="Họ và Tên" Binding="{Binding FullName}" Width="180" FontWeight="SemiBold"/>
+                            <DataGridTextColumn Header="Giới tính" Binding="{Binding Gender}" Width="80"/>
+                            <DataGridTextColumn Header="Phòng ban" Binding="{Binding Department.DepartmentName, FallbackValue='Phòng Hành Chính'}" Width="160"/>
+                            <DataGridTextColumn Header="Chức vụ" Binding="{Binding Position.PositionName, FallbackValue='Cán Bộ'}" Width="140"/>
+                            <DataGridTextColumn Header="Ngày vào làm" Binding="{Binding JoinDate, StringFormat={}{0:dd/MM/yyyy}}" Width="120"/>
+                            <DataGridTextColumn Header="Trạng thái" Binding="{Binding WorkStatus}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Grid.Row="1" 
+                               Text="* Nhấp chọn một dòng và nhấn 'Xem chi tiết' để theo dõi chi tiết bảo mật." 
+                               Foreground="Gray" 
+                               FontStyle="Italic" 
+                               FontSize="11" 
+                               Margin="0,12,0,0"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

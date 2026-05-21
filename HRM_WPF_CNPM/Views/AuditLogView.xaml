@@ -1,0 +1,196 @@
+<UserControl x:Class="HRM_WPF_CNPM.Views.AuditLogView"
+             xmlns="http://schemas.microsoft.com/winfx/2000/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2000/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:local="clr-namespace:HRM_WPF_CNPM.Views"
+             xmlns:vm="clr-namespace:HRM_WPF_CNPM.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="#FAFAFA">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Page Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="NHẬT KÝ HOẠT ĐỘNG (AUDIT LOG)" 
+                       FontSize="24" 
+                       FontWeight="Black" 
+                       Foreground="#2D3A2D"/>
+            <TextBlock Text="Hệ thống tự động giám sát và sao lưu lịch sử các hành vi Thêm, Sửa, Xoá, Phê Duyệt dữ liệu của người dùng." 
+                       FontSize="12" 
+                       Foreground="Gray" 
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Filters Block -->
+        <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,0,0,16">
+            <DockPanel LastChildFill="False">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <!-- Search input -->
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             ui:ControlHelper.PlaceholderText="Tìm thao tác, tài khoản, chi tiết..."
+                             Width="240"
+                             Height="34"
+                             Margin="0,0,12,0"
+                             ui:ControlHelper.CornerRadius="6"/>
+
+                    <!-- Table Name Filter Combo -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <TextBlock Text="Phân hệ:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="Gray" FontSize="12"/>
+                        <ComboBox ItemsSource="{Binding TableNames}"
+                                  SelectedItem="{Binding SelectedTableName}"
+                                  Width="150"
+                                  Height="34"
+                                  ui:ControlHelper.CornerRadius="6"/>
+                    </StackPanel>
+
+                    <!-- Action Type Filter Combo -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <TextBlock Text="Thao tác:" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="Gray" FontSize="12"/>
+                        <ComboBox ItemsSource="{Binding Actions}"
+                                  SelectedItem="{Binding SelectedActionName}"
+                                  Width="130"
+                                  Height="34"
+                                  ui:ControlHelper.CornerRadius="6"/>
+                    </StackPanel>
+
+                    <!-- Clear filter button -->
+                    <Button Content="Xoá Bộ Lọc" 
+                            Command="{Binding ClearFilterCommand}"
+                            Height="34"
+                            Padding="12,0"
+                            Margin="0,0,8,0"
+                            ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- Refresh button -->
+                <Button Command="{Binding RefreshCommand}"
+                        DockPanel.Dock="Right"
+                        Height="34"
+                        Width="40"
+                        Padding="0"
+                        ToolTip="Tải lại nhật ký"
+                        ui:ControlHelper.CornerRadius="6">
+                    <TextBlock Text="🔄" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+            </DockPanel>
+        </Border>
+
+        <!-- Data Grid View -->
+        <Border Grid.Row="2" Background="#FFFFFF" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1" Padding="8">
+            <Grid>
+                <!-- Active Grid for Logs -->
+                <DataGrid ItemsSource="{Binding AuditLogs}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          RowHeight="40">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Thời Gian" Binding="{Binding CreatedAt, StringFormat={}{0:dd/MM/yyyy HH:mm:ss}}" Width="160" FontWeight="SemiBold"/>
+                        <DataGridTextColumn Header="Tài Khoản" Binding="{Binding User.Username, TargetNullValue='Hệ thống'}" Width="110"/>
+                        
+                        <!-- Actions Custom Badge -->
+                        <DataGridTemplateColumn Header="Hành Động" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="6" Padding="6,2" HorizontalAlignment="Left" Margin="2">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Action}" Value="CREATE">
+                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                        <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Action}" Value="UPDATE">
+                                                        <Setter Property="Background" Value="#FFF3E0"/>
+                                                        <Setter Property="BorderBrush" Value="#FFE0B2"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Action}" Value="DELETE">
+                                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                                        <Setter Property="BorderBrush" Value="#FFCDD2"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Action}" Value="APPROVE">
+                                                        <Setter Property="Background" Value="#E0F2F1"/>
+                                                        <Setter Property="BorderBrush" Value="#B2DFDB"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Action}" Value="REJECT">
+                                                        <Setter Property="Background" Value="#F3E5F5"/>
+                                                        <Setter Property="BorderBrush" Value="#E1BEE7"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding Action}" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Action}" Value="CREATE">
+                                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Action}" Value="UPDATE">
+                                                            <Setter Property="Foreground" Value="#E65100"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Action}" Value="DELETE">
+                                                            <Setter Property="Foreground" Value="#C62828"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Action}" Value="APPROVE">
+                                                            <Setter Property="Foreground" Value="#00695C"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Action}" Value="REJECT">
+                                                            <Setter Property="Foreground" Value="#6A1B9A"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="Bảng Dữ Liệu" Binding="{Binding TableName}" Width="120"/>
+                        <DataGridTextColumn Header="Mã ID dòng" Binding="{Binding RecordId}" Width="100" FontFamily="Consolas"/>
+                        <DataGridTextColumn Header="Chi Tiết Thao Tác" Binding="{Binding Description}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                
+                <!-- Placeholder if list is empty -->
+                <Border Background="#F9FAFB" CornerRadius="8" Padding="32" BorderBrush="#E5E7EB" BorderThickness="1"
+                        Visibility="{Binding AuditLogs.Count, Converter={StaticResource BoolToVisConverter}, ConverterParameter=0}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="📋" FontSize="44" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="Chưa có bản ghi hoạt động nào" 
+                                   Foreground="#9CA3AF" 
+                                   FontSize="15" 
+                                   FontWeight="Bold" 
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Nhật ký hoạt động của phần mềm hiện đang trống hoặc không có bản ghi nào khớp bộ lọc lựa chọn." 
+                                   Foreground="#9CA3AF" 
+                                   FontSize="12" 
+                                   TextAlignment="Center"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

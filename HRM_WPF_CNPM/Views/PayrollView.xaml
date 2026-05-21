@@ -1,0 +1,377 @@
+<UserControl x:Class="HRM_WPF_CNPM.Views.PayrollView"
+             xmlns="http://schemas.microsoft.com/winfx/2000/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2000/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:local="clr-namespace:HRM_WPF_CNPM.Views"
+             xmlns:vm="clr-namespace:HRM_WPF_CNPM.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="#FAFAFA">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Page Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="QUẢN LÝ LƯƠNG" 
+                       FontSize="24" 
+                       FontWeight="Black" 
+                       Foreground="#2D3A2D"/>
+            <TextBlock Text="Xem danh sách bảng lương theo tháng, tự động tính tổng số công thực tế, tính lương cơ bản và áp dụng thưởng phạt." 
+                       FontSize="12" 
+                       Foreground="Gray" 
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Filters & Bulk Action Row -->
+        <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,0,0,16">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                
+                <!-- 1. Text Search Input -->
+                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ui:ControlHelper.PlaceholderText="Tìm mã, họ tên nhân viên..."
+                         HorizontalAlignment="Stretch"
+                         Width="200"
+                         Height="34"
+                         Margin="0,0,12,0"
+                         ui:ControlHelper.CornerRadius="6"
+                         IsEnabled="{Binding IsEmployeeView, Converter={StaticResource BoolToVisConverter}, ConverterParameter=false}"/>
+
+                <!-- 2. Month Filter ComboBox -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center" Visibility="{Binding IsEmployeeView, Converter={StaticResource BoolToVisConverter}, ConverterParameter=false}">
+                    <TextBlock Text="Tháng:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding MonthsList}"
+                              SelectedItem="{Binding SelectedMonth}"
+                              Width="80"
+                              Height="34"
+                              ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- 3. Year Filter ComboBox -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center" Visibility="{Binding IsEmployeeView, Converter={StaticResource BoolToVisConverter}, ConverterParameter=false}">
+                    <TextBlock Text="Năm:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding YearsList}"
+                              SelectedItem="{Binding SelectedYear}"
+                              Width="90"
+                              Height="34"
+                              ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- 4. Status Filter ComboBox -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center" Visibility="{Binding IsEmployeeView, Converter={StaticResource BoolToVisConverter}, ConverterParameter=false}">
+                    <TextBlock Text="Trạng thái:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding StatusFilterList}"
+                              SelectedItem="{Binding SelectedStatusFilter}"
+                              Width="110"
+                              Height="34"
+                              ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- 5. Action Buttons (Only high permissions) -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" Visibility="{Binding CanManage, Converter={StaticResource BoolToVisConverter}}">
+                    <Button Command="{Binding CreatePayrollCommand}"
+                            Content="➕ TẠO BẢNG LƯƠNG"
+                            Background="#E3F2FD"
+                            Foreground="#1565C0"
+                            FontWeight="Bold"
+                            Height="34"
+                            Padding="12,0"
+                            Margin="0,0,8,0"
+                            ui:ControlHelper.CornerRadius="6"/>
+                    
+                    <Button Command="{Binding CalculateAllCommand}"
+                            Content="⚡ TÍNH TOÀN BỘ"
+                            Background="#E8F5E9"
+                            Foreground="#2E7D32"
+                            FontWeight="Bold"
+                            Height="34"
+                            Padding="12,0"
+                            Margin="0,0,8,0"
+                            ui:ControlHelper.CornerRadius="6"/>
+
+                    <Button Command="{Binding LockPayrollCommand}"
+                            Content="🔒 CHỐT LƯƠNG"
+                            Background="#FFF3E0"
+                            Foreground="#E65100"
+                            FontWeight="Bold"
+                            Height="34"
+                            Padding="12,0"
+                            ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- 6. Reload Button -->
+                <Button Command="{Binding LoadPayrollsCommand}"
+                        Content="🔄 TẢI LẠI"
+                        Background="#ECECEC"
+                        Foreground="#333"
+                        FontWeight="Bold"
+                        Height="34"
+                        Padding="12,0"
+                        ui:ControlHelper.CornerRadius="6"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- Main Workspace -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3.2*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Column 1: Payrolls List -->
+            <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1" Padding="12" Margin="0,0,12,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid ItemsSource="{Binding Payrolls}"
+                              SelectedItem="{Binding SelectedPayroll, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              RowHeight="42">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Mã NV" Binding="{Binding Employee.EmployeeCode}" Width="75" FontWeight="SemiBold"/>
+                            <DataGridTextColumn Header="Họ và Tên" Binding="{Binding Employee.FullName}" Width="135" FontWeight="Normal"/>
+                            <DataGridTextColumn Header="Tháng" Binding="{Binding PayrollMonth}" Width="70"/>
+                            <DataGridTextColumn Header="Phòng Ban" Binding="{Binding Employee.Department.DepartmentName}" Width="110"/>
+                            <DataGridTextColumn Header="Lương cứng" Binding="{Binding BaseSalary, StringFormat={}{0:N0} đ}" Width="100"/>
+                            <DataGridTextColumn Header="Ngày Công (TT/C)" Width="110">
+                                <DataGridTextColumn.Binding>
+                                    <MultiBinding StringFormat="{}{0}/{1} ngày">
+                                        <Binding Path="ActualWorkDays"/>
+                                        <Binding Path="StandardWorkDays"/>
+                                    </MultiBinding>
+                                </DataGridTextColumn.Binding>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Thực Lĩnh" Binding="{Binding NetSalary, StringFormat={}{0:N0} đ}" Width="110" FontWeight="Bold" ElementStyle="{StaticResource {x:Type TextBlock}}"/>
+                            
+                            <!-- Custom status cell template styling -->
+                            <DataGridTemplateColumn Header="Trạng thái" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" Margin="2">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Đã chốt">
+                                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                                            <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Đã tính">
+                                                            <Setter Property="Background" Value="#E3F2FD"/>
+                                                            <Setter Property="BorderBrush" Value="#BBDEFB"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Nháp">
+                                                            <Setter Property="Background" Value="#ECECEC"/>
+                                                            <Setter Property="BorderBrush" Value="#DDD"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding Status}" FontWeight="Bold" FontSize="11">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Đã chốt">
+                                                                <Setter Property="Foreground" Value="#2E7D32"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Đã tính">
+                                                                <Setter Property="Foreground" Value="#1565C0"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Nháp">
+                                                                <Setter Property="Foreground" Value="#666"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Alert message area -->
+                    <StackPanel Grid.Row="1" Margin="0,12,0,0">
+                        <Border Background="#E8F5E9" BorderBrush="#C8E6C9" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6"
+                                Visibility="{Binding SuccessMsg, Converter={StaticResource BoolToVisConverter}}">
+                            <TextBlock Text="{Binding SuccessMsg}" Foreground="#2E7D32" FontWeight="SemiBold" FontSize="12"/>
+                        </Border>
+                        <Border Background="#FFEBEE" BorderBrush="#FFCDD2" BorderThickness="1" CornerRadius="6" Padding="10"
+                                Visibility="{Binding ErrorMsg, Converter={StaticResource BoolToVisConverter}}">
+                            <TextBlock Text="{Binding ErrorMsg}" Foreground="#C62828" FontWeight="SemiBold" FontSize="12"/>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Column 2: Detailed View / Editing Row Details -->
+            <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Detail Section Title -->
+                    <TextBlock Grid.Row="0" Text="CHI TIẾT PHIẾU LƯƠNG" 
+                               FontSize="16" 
+                               FontWeight="Bold" 
+                               Foreground="#2D3A2D" 
+                               Margin="0,0,0,16"/>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,0,4,0">
+                            
+                            <!-- Static Info Items -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Nhân viên:" FontSize="13" Foreground="#666" VerticalAlignment="Center"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock Text="{Binding DetailEmployeeName}" FontSize="13" FontWeight="Bold" Foreground="#111" VerticalAlignment="Center"/>
+                                    <TextBlock Text=" - " FontSize="13" Foreground="#666" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding DetailEmployeeCode}" FontSize="13" FontWeight="Bold" Foreground="#1565C0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Tháng lương:" FontSize="13" Foreground="#666" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding DetailMonth}" FontSize="13" FontWeight="SemiBold" Foreground="#111" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Lương cơ bản:" FontSize="13" Foreground="#666" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding DetailBaseSalary, StringFormat={}{0:N0} VNĐ}" FontSize="13" FontWeight="SemiBold" Foreground="#111" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <Grid.ColumnDefinition Width="*"/>
+                                    <Grid.ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="Công chuẩn:" FontSize="12" Foreground="#666" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding DetailStandardDays, StringFormat={}{0:N1} ngày}" FontSize="14" FontWeight="SemiBold" Foreground="#111"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Vertical">
+                                    <TextBlock Text="Công thực tế:" FontSize="12" Foreground="#666" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding DetailActualDays, StringFormat={}{0:N1} ngày}" FontSize="14" FontWeight="SemiBold" Foreground="#2E7D32"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Separator Margin="0,4,0,16" Background="#EEE"/>
+
+                            <!-- Forms adjustment Fields (For Thượng / Phạt) -->
+                            <TextBlock Text="ĐIỀU CHỈNH THU NHẬP" FontSize="12" FontWeight="Bold" Foreground="#555" Margin="0,0,0,12"/>
+
+                            <!-- Thưởng Input -->
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="Khoản Thưởng (VNĐ):" FontSize="12" Foreground="#666" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding DetailBonus, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" 
+                                         Height="36" 
+                                         ui:ControlHelper.CornerRadius="6"
+                                         IsEnabled="{Binding CanEditBonusPenalty}"/>
+                            </StackPanel>
+
+                            <!-- Phạt Input -->
+                            <StackPanel Margin="0,0,0,16">
+                                <TextBlock Text="Khấu trừ / Phạt (VNĐ):" FontSize="12" Foreground="#666" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding DetailPenalty, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" 
+                                         Height="36" 
+                                         ui:ControlHelper.CornerRadius="6"
+                                         IsEnabled="{Binding CanEditBonusPenalty}"/>
+                            </StackPanel>
+
+                            <Separator Margin="0,4,0,16" Background="#EEE"/>
+
+                            <!-- Total NetSalary Output -->
+                            <Border Background="#F9FAFB" CornerRadius="8" Padding="12" BorderBrush="#ECECEC" BorderThickness="1" Margin="0,0,0,16">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="THỰC LĨNH NHÂN VIÊN" FontSize="11" Foreground="#777" FontWeight="Bold"/>
+                                    <TextBlock Grid.Row="1" Text="{Binding DetailNetSalary, StringFormat={}{0:N0} VNĐ}" FontSize="20" FontWeight="Black" Foreground="#D32F2F" Margin="0,4,0,0"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Locked state notification if applicable -->
+                            <Border Background="#ECEFF1" CornerRadius="6" Padding="10" Margin="0,0,0,12" Visibility="{Binding DetailIsLocked, Converter={StaticResource BoolToVisConverter}}">
+                                <TextBlock Text="🔒 Phiếu lương này đã chốt và khóa vĩnh viễn. Chỉ Tài khoản Admin tối cao mới có quyền ghi đè số liệu thưởng phạt."
+                                           Foreground="#37474F"
+                                           FontSize="11"
+                                           TextWrapping="Wrap"/>
+                            </Border>
+
+                            <Border Background="#FFF9C4" CornerRadius="6" Padding="10" Margin="0,0,0,12" Visibility="{Binding IsEmployeeView, Converter={StaticResource BoolToVisConverter}}">
+                                <TextBlock Text="💡 Bạn đang ở chế độ Nhân viên: Chỉ xem phiếu lương cá nhân của bản thân. Mọi thắc mắc vui lòng kiến nghị trực tiếp với quản trị HR."
+                                           Foreground="#7F5F00"
+                                           FontSize="11"
+                                           TextWrapping="Wrap"/>
+                            </Border>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Row 2: Submit and Re-calculate single item operations -->
+                    <StackPanel Grid.Row="2" Visibility="{Binding CanManage, Converter={StaticResource BoolToVisConverter}}">
+                        <!-- Update details bonus/penalty -->
+                        <Button Command="{Binding UpdateBonusPenaltyCommand}"
+                                Content="💾 CẬP NHẬT THƯỞNG PHẠT"
+                                Background="#1565C0"
+                                Foreground="#FFFFFF"
+                                FontWeight="Bold"
+                                Height="38"
+                                Margin="0,0,0,8"
+                                HorizontalAlignment="Stretch"
+                                ui:ControlHelper.CornerRadius="6"/>
+
+                        <!-- Calculate/Recalculate Selected -->
+                        <Button Command="{Binding CalculateSelectedCommand}"
+                                Content="⚡ TÍNH LẠI DÒNG NÀY"
+                                Background="#F5F5F5"
+                                Foreground="#333"
+                                FontWeight="Bold"
+                                Height="36"
+                                HorizontalAlignment="Stretch"
+                                ui:ControlHelper.CornerRadius="6"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

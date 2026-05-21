@@ -1,0 +1,664 @@
+<UserControl x:Class="HRM_WPF_CNPM.Views.EmployeeDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2000/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2000/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:local="clr-namespace:HRM_WPF_CNPM.Views"
+             xmlns:vm="clr-namespace:HRM_WPF_CNPM.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="1000"
+             Background="#F3F3F3">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+        
+        <!-- Inverse visibility converter simulation using Style triggers -->
+        <Style x:Key="HiddenSalaryStyle" TargetType="TextBlock">
+            <Setter Property="Text" Value="****** (Không có quyền xem)"/>
+            <Setter Property="Foreground" Value="Gray"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding CanViewSalary}" Value="True">
+                    <Setter Property="Text" Value="{Binding Employee.BaseSalary, StringFormat={}{0:N0} VNĐ}"/>
+                    <Setter Property="Foreground" Value="#d32f2f"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                    <Setter Property="FontStyle" Value="Normal"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Command Header bar -->
+        <Border Grid.Row="0" Background="#2D3A2D" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Command="{Binding BackCommand}" 
+                        Content="← QUAY LẠI DANH SÁCH" 
+                        Background="#c5a059" 
+                        Foreground="#1A241A" 
+                        FontWeight="Bold" 
+                        Padding="16,8"
+                        BorderThickness="0"
+                        ui:ControlHelper.CornerRadius="6"/>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0,0,0">
+                    <TextBlock Text="CHI TIẾT HỒ SƠ NHÂN SỰ CHUYÊN CHẾ" 
+                               Foreground="#FFFFFF" 
+                               FontWeight="Heavy" 
+                               FontSize="16" 
+                               LetterSpacing="1"/>
+                    <TextBlock Text="{Binding Employee.EmployeeCode, StringFormat={}Mã hiệu hồ sơ quân số: {0}}" 
+                               Foreground="#C5A059" 
+                               FontSize="11" 
+                               FontWeight="Bold"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <Border Grid.Column="2" Background="#26FFFFFF" CornerRadius="4" Padding="8,4" VerticalAlignment="Center">
+                    <TextBlock Text="TRẠNG THÁI: KHỚP NỐI DATABASE" Foreground="#A3E635" FontWeight="Bold" FontSize="10"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Main Workspace Area -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="280"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Column Profile Badge -->
+                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                    <Border Background="#FFFFFF" CornerRadius="12" Padding="20" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <!-- Avatar Circle Placeholder -->
+                            <Grid Width="100" Height="100" Margin="0,10,0,15">
+                                <Ellipse Fill="#1A2D3A2D"/>
+                                <Ellipse Stroke="#C5A059" StrokeThickness="2" />
+                                <TextBlock Text="HRM" 
+                                           VerticalAlignment="Center" 
+                                           HorizontalAlignment="Center" 
+                                           Foreground="#2D3A2D" 
+                                           FontWeight="Black" 
+                                           FontSize="22"/>
+                            </Grid>
+
+                            <TextBlock Text="{Binding Employee.FullName}" 
+                                       HorizontalAlignment="Center" 
+                                       FontWeight="Black" 
+                                       FontSize="18" 
+                                       TextAlignment="Center"
+                                       Foreground="#1C1917"/>
+
+                            <TextBlock Text="{Binding Employee.EmployeeCode}" 
+                                       HorizontalAlignment="Center" 
+                                       FontWeight="Bold" 
+                                       Foreground="#C5A059" 
+                                       Margin="0,2,0,10"
+                                       FontFamily="Consolas"
+                                       FontSize="12"/>
+
+                            <Border Background="#F0FDF4" BorderBrush="#DCFCE7" BorderThickness="1" CornerRadius="10" Padding="8,4" HorizontalAlignment="Center" Margin="0,4,0,16">
+                                <TextBlock Text="{Binding Employee.WorkStatus}" Foreground="#15803D" FontWeight="Bold" FontSize="11"/>
+                            </Border>
+
+                            <Separator Margin="0,4,0,16"/>
+
+                            <StackPanel HorizontalAlignment="Left" Width="200">
+                                <TextBlock Text="Bộ Phận Trực Thuộc" FontSize="10" Foreground="Gray" FontWeight="Bold" Margin="0,0,0,2"/>
+                                <TextBlock Text="{Binding Employee.Department.DepartmentName, FallbackValue='Phòng Hành Chính'}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="Chức danh đảm nhiệm" FontSize="10" Foreground="Gray" FontWeight="Bold" Margin="0,0,0,2"/>
+                                <TextBlock Text="{Binding Employee.Position.PositionName, FallbackValue='Chuyên viên'}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="Phân khu làm việc" FontSize="10" Foreground="Gray" FontWeight="Bold" Margin="0,0,0,2"/>
+                                <TextBlock Text="Sư đoàn liên đoàn Bộ chỉ huy" FontSize="12" FontWeight="SemiBold" FontStyle="Italic"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Auxiliary info -->
+                    <Border Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock Text="⚠ Chỉ dẫn bảo mật hành chính" FontWeight="Bold" Foreground="#92400E" FontSize="11"/>
+                            <TextBlock Text="Dữ liệu hồ sơ này là tài liệu cơ mật, nghiêm cấm in ấn sao chép trái quy định cơ yếu của đơn vị." 
+                                       Foreground="#B45309" 
+                                       FontSize="10" 
+                                       TextWrapping="Wrap" 
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Right Column Full Tabs Details -->
+                <StackPanel Grid.Column="1" spacing="16">
+                    
+                    <!-- Section A: Personal Information & Profession Grid -->
+                    <Border Background="#FFFFFF" CornerRadius="12" Padding="20" BorderBrush="#E0E0E0" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="THÔNG TIN CÁ NHÂN &amp; NGHIỆP VỤ CƠ BẢN" FontWeight="Heavy" FontSize="14" Foreground="#2D3A2D" Margin="0,0,0,12"/>
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Row 0 -->
+                                <StackPanel Grid.Column="0" Margin="0,4,8,8">
+                                    <TextBlock Text="Ngày tháng năm sinh" FontSize="10" Foreground="Gray" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Employee.DateOfBirth, StringFormat={}{0:dd/MM/yyyy}, FallbackValue='15/08/1995'}" Margin="0,4,0,0" FontSize="13" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="8,4,0,8">
+                                    <TextBlock Text="Giới tính nguyên quán" FontSize="10" Foreground="Gray" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Employee.Gender, FallbackValue='Nam'}" Margin="0,4,0,0" FontSize="13" FontWeight="SemiBold"/>
+                                </StackPanel>
+
+                                <!-- Row 1 -->
+                                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,8,8,8">
+                                    <TextBlock Text="Mã số căn cước công dân (CCCD)" FontSize="10" Foreground="Gray" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Employee.CitizenId, FallbackValue='037095000452'}" Margin="0,4,0,0" FontSize="13" FontWeight="SemiBold" FontFamily="Consolas"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,8,0,8">
+                                    <TextBlock Text="Số điện thoại liên lạc" FontSize="10" Foreground="Gray" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Employee.Phone, FallbackValue='0955 123 456'}" Margin="0,4,0,0" FontSize="13" FontWeight="SemiBold"/>
+                                </StackPanel>
+
+                                <!-- Row 2 -->
+                                <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,8,8,8">
+                                    <TextBlock Text="Địa chỉ thư điện tử (Email)" FontSize="10" Foreground="Gray" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Employee.Email, FallbackValue='nhanvien@hrm-wpf.vn'}" Margin="0,4,0,0" FontSize="13" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="1" Margin="8,8,0,8">
+                                    <TextBlock Text="Ngày chính thức gia nhập quân số" FontSize="10" Foreground="Gray" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Employee.JoinDate, StringFormat={}{0:dd/MM/yyyy}, FallbackValue='01/06/2021'}" Margin="0,4,0,0" FontSize="13" FontWeight="SemiBold"/>
+                                </StackPanel>
+
+                                <!-- Row 3 -->
+                                <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,8,0,8">
+                                    <TextBlock Text="Địa chỉ cư trú hiện tại" FontSize="10" Foreground="Gray" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Employee.Address, FallbackValue='Địa bàn Sư Đoàn bộ, Hà Nội'}" Margin="0,4,0,0" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="3" Grid.Column="1" Margin="8,8,0,8">
+                                    <TextBlock Text="Hạn mức lương cơ bản hành chính" FontSize="10" Foreground="Gray" FontWeight="Bold"/>
+                                    <TextBlock Style="{StaticResource HiddenSalaryStyle}" Margin="0,4,0,0" FontSize="13"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section B: List of contracts -->
+                    <Border Background="#FFFFFF" CornerRadius="12" Padding="20" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="DANH SÁCH HỢP ĐỒNG LAO ĐỘNG HÀNH CHÍNH" FontWeight="Heavy" FontSize="14" Foreground="#2D3A2D" Margin="0,0,0,12"/>
+                            
+                            <!-- If has contracts, show the list -->
+                            <Grid Visibility="{Binding HasContracts, Converter={StaticResource BoolToVisConverter}}">
+                                <DataGrid ItemsSource="{Binding Contracts}" 
+                                          AutoGenerateColumns="False" 
+                                          IsReadOnly="True" 
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          RowHeight="40">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Mã Hợp Đồng" Binding="{Binding ContractCode}" Width="130" FontWeight="Bold"/>
+                                        <DataGridTextColumn Header="Loại Hợp Đồng" Binding="{Binding ContractType}" Width="180"/>
+                                        <DataGridTextColumn Header="Bắt Đầu" Binding="{Binding StartDate, StringFormat={}{0:dd/MM/yyyy}}" Width="110"/>
+                                        <DataGridTextColumn Header="Kết Thúc" Binding="{Binding EndDate, StringFormat={}{0:dd/MM/yyyy}, TargetNullValue='Vô thời hạn'}" Width="110"/>
+                                        
+                                        <!-- Secured Salary column -->
+                                        <DataGridTemplateColumn Header="Lương HĐ" Width="130">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock VerticalAlignment="Center" Margin="6,0">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="******"/>
+                                                                <Setter Property="Foreground" Value="Gray"/>
+                                                                <Setter Property="FontStyle" Value="Italic"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=DataContext.CanViewSalary}" Value="True">
+                                                                        <Setter Property="Text" Value="{Binding Salary, StringFormat={}{0:N0} VNĐ}"/>
+                                                                        <Setter Property="Foreground" Value="#2D3A2D"/>
+                                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                        <Setter Property="FontStyle" Value="Normal"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <!-- Custom status cell template styling -->
+                                        <DataGridTemplateColumn Header="Trạng Thái" Width="*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" Margin="2">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Còn hiệu lực">
+                                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                                        <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Hiệu lực">
+                                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                                        <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Sắp hết hạn">
+                                                                        <Setter Property="Background" Value="#FFF9C4"/>
+                                                                        <Setter Property="BorderBrush" Value="#FFF59D"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Hết hạn">
+                                                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                                                        <Setter Property="BorderBrush" Value="#FFCDD2"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Đã thanh lý">
+                                                                        <Setter Property="Background" Value="#F5F5F5"/>
+                                                                        <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        
+                                                        <TextBlock Text="{Binding Status}" FontWeight="Bold" FontSize="11">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Còn hiệu lực">
+                                                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Hiệu lực">
+                                                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Sắp hết hạn">
+                                                                            <Setter Property="Foreground" Value="#F57F17"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Hết hạn">
+                                                                            <Setter Property="Foreground" Value="#C62828"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Đã thanh lý">
+                                                                            <Setter Property="Foreground" Value="#616161"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+
+                            <!-- If no contracts, show notification banner -->
+                            <Border Background="#F9FAFB" CornerRadius="8" Padding="24" Margin="0,8,0,0" BorderBrush="#E5E7EB" BorderThickness="1"
+                                    Visibility="{Binding NoContracts, Converter={StaticResource BoolToVisConverter}}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="📂" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <TextBlock Text="Chưa có hợp đồng lao động" 
+                                               Foreground="#9CA3AF" 
+                                               FontSize="13" 
+                                               FontWeight="Bold" 
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Cán bộ nhân sự này hiện chưa được khởi tạo bất kỳ loại hợp đồng lao động hoặc thử việc nào trên hệ thống." 
+                                               Foreground="#9CA3AF" 
+                                               FontSize="11" 
+                                               TextAlignment="Center"
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section C: Leave Requests Logs -->
+                    <Border Background="#FFFFFF" CornerRadius="12" Padding="20" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="LỊCH SỬ NGHỈ PHÉP" FontWeight="Heavy" FontSize="14" Foreground="#2D3A2D" Margin="0,0,0,12"/>
+                            
+                            <!-- If has leave requests, show the list -->
+                            <Grid Visibility="{Binding HasLeaveRequests, Converter={StaticResource BoolToVisConverter}}">
+                                <DataGrid ItemsSource="{Binding LeaveRequests}" 
+                                          AutoGenerateColumns="False" 
+                                          IsReadOnly="True" 
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          RowHeight="40">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Loại nghỉ" Binding="{Binding LeaveType}" Width="140" FontWeight="SemiBold"/>
+                                        <DataGridTextColumn Header="Từ ngày" Binding="{Binding FromDate, StringFormat={}{0:dd/MM/yyyy}}" Width="110"/>
+                                        <DataGridTextColumn Header="Đến ngày" Binding="{Binding ToDate, StringFormat={}{0:dd/MM/yyyy}}" Width="110"/>
+                                        <DataGridTextColumn Header="Tổng số ngày" Binding="{Binding TotalDays}" Width="100"/>
+                                        <DataGridTextColumn Header="Lý do" Binding="{Binding Reason}" Width="*"/>
+                                        
+                                        <!-- Custom status pill styling -->
+                                        <DataGridTemplateColumn Header="Trạng thái" Width="120">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" Margin="2">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Đã duyệt">
+                                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                                        <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Chờ duyệt">
+                                                                        <Setter Property="Background" Value="#FFF9C4"/>
+                                                                        <Setter Property="BorderBrush" Value="#FFF59D"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Từ chối">
+                                                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                                                        <Setter Property="BorderBrush" Value="#FFCDD2"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Đã hủy">
+                                                                        <Setter Property="Background" Value="#F5F5F5"/>
+                                                                        <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        
+                                                        <TextBlock Text="{Binding Status}" FontWeight="Bold" FontSize="11">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Đã duyệt">
+                                                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Chờ duyệt">
+                                                                            <Setter Property="Foreground" Value="#F57F17"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Từ chối">
+                                                                            <Setter Property="Foreground" Value="#C62828"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Đã hủy">
+                                                                            <Setter Property="Foreground" Value="#616161"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+
+                            <!-- If no leave requests, show notification banner -->
+                            <Border Background="#F9FAFB" CornerRadius="8" Padding="24" Margin="0,8,0,0" BorderBrush="#E5E7EB" BorderThickness="1"
+                                    Visibility="{Binding NoLeaveRequests, Converter={StaticResource BoolToVisConverter}}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="📅" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <TextBlock Text="Chưa có dữ liệu nghỉ phép" 
+                                               Foreground="#9CA3AF" 
+                                               FontSize="13" 
+                                               FontWeight="Bold" 
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Nhân viên này chưa ghi nhận bất kỳ đơn xin nghỉ phép nào trên hệ thống." 
+                                               Foreground="#9CA3AF" 
+                                               FontSize="11" 
+                                               TextAlignment="Center"
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section D: Recent Attendance Records -->
+                    <Border Background="#FFFFFF" CornerRadius="12" Padding="20" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,16,0,16">
+                        <StackPanel>
+                            <TextBlock Text="CHẤM CÔNG GẦN ĐÂY (TỐI ĐA 10 NGÀY CÔNG)" FontWeight="Heavy" FontSize="14" Foreground="#2D3A2D" Margin="0,0,0,12"/>
+                            
+                            <!-- If has attendance records -->
+                            <Grid Visibility="{Binding HasAttendanceRecords, Converter={StaticResource BoolToVisConverter}}">
+                                <DataGrid ItemsSource="{Binding AttendanceRecords}" 
+                                          AutoGenerateColumns="False" 
+                                          IsReadOnly="True" 
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          RowHeight="40">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Ngày công" Binding="{Binding WorkDate, StringFormat={}{0:dd/MM/yyyy}}" Width="120" FontWeight="Bold"/>
+                                        <DataGridTextColumn Header="Giờ vào" Binding="{Binding CheckInTime}" Width="100"/>
+                                        <DataGridTextColumn Header="Giờ ra" Binding="{Binding CheckOutTime}" Width="100"/>
+                                        <DataGridTextColumn Header="Số giờ làm" Binding="{Binding WorkHours, StringFormat={}{0:N2} giờ}" Width="110" FontWeight="SemiBold"/>
+                                        
+                                        <!-- Attendance Status Pill -->
+                                        <DataGridTemplateColumn Header="Trạng thái" Width="140">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" Margin="2">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đủ công">
+                                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                                        <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đúng giờ">
+                                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                                        <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đi muộn">
+                                                                        <Setter Property="Background" Value="#FFF9C4"/>
+                                                                        <Setter Property="BorderBrush" Value="#FFF59D"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding AttendanceStatus}" Value="Về sớm">
+                                                                        <Setter Property="Background" Value="#FFE0B2"/>
+                                                                        <Setter Property="BorderBrush" Value="#FFCC80"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding AttendanceStatus}" Value="Nghỉ phép">
+                                                                        <Setter Property="Background" Value="#E3F2FD"/>
+                                                                        <Setter Property="BorderBrush" Value="#BBDEFB"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding AttendanceStatus}" Value="Nghỉ không phép">
+                                                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                                                        <Setter Property="BorderBrush" Value="#FFCDD2"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="{Binding AttendanceStatus}" FontWeight="Bold" FontSize="11">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đủ công">
+                                                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đúng giờ">
+                                                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đi muộn">
+                                                                            <Setter Property="Foreground" Value="#F57F17"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Về sớm">
+                                                                            <Setter Property="Foreground" Value="#E65100"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Nghỉ phép">
+                                                                            <Setter Property="Foreground" Value="#1565C0"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Nghỉ không phép">
+                                                                            <Setter Property="Foreground" Value="#C62828"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note, TargetNullValue='N/A'}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+
+                            <!-- If no attendance records, show placeholder -->
+                            <Border Background="#F9FAFB" CornerRadius="8" Padding="24" Margin="0,8,0,0" BorderBrush="#E5E7EB" BorderThickness="1"
+                                    Visibility="{Binding NoAttendanceRecords, Converter={StaticResource BoolToVisConverter}}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="⏰" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <TextBlock Text="Chưa có dữ liệu chấm công" 
+                                               Foreground="#9CA3AF" 
+                                               FontSize="13" 
+                                               FontWeight="Bold" 
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Hệ thống cơ sở dữ liệu hiện hành của nhân sự này chưa ghi nhận bất kỳ ngày công nào." 
+                                               Foreground="#9CA3AF" 
+                                               FontSize="11" 
+                                               TextAlignment="Center"
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section E: Payroll History (GIAI ĐOẠN 9.2) -->
+                    <Border Background="#FFFFFF" CornerRadius="12" Padding="20" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,16,0,16"
+                            Visibility="{Binding CanViewSalary, Converter={StaticResource BoolToVisConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="LỊCH SỬ LƯƠNG NHÂN VIÊN" FontWeight="Heavy" FontSize="14" Foreground="#2D3A2D" Margin="0,0,0,12"/>
+                            
+                            <!-- If has payroll record -->
+                            <Grid Visibility="{Binding HasPayrolls, Converter={StaticResource BoolToVisConverter}}">
+                                <DataGrid ItemsSource="{Binding Payrolls}" 
+                                          AutoGenerateColumns="False" 
+                                          IsReadOnly="True" 
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          SelectionMode="Single"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          RowHeight="40">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Tháng Lương" Binding="{Binding PayrollMonth}" Width="110" FontWeight="SemiBold"/>
+                                        <DataGridTextColumn Header="Lương Cơ Bản" Binding="{Binding BaseSalary, StringFormat={}{0:N0} đ}" Width="130"/>
+                                        <DataGridTextColumn Header="Công Chuẩn" Binding="{Binding StandardWorkDays, StringFormat={}{0:N0}}" Width="100"/>
+                                        <DataGridTextColumn Header="Công Thực Tế" Binding="{Binding ActualWorkDays, StringFormat={}{0:N1}}" Width="110" FontWeight="SemiBold" Foreground="#2E7D32"/>
+                                        <DataGridTextColumn Header="Thưởng" Binding="{Binding Bonus, StringFormat={}{0:N0} đ}" Width="120" Foreground="#2E7D32"/>
+                                        <DataGridTextColumn Header="Phạt" Binding="{Binding Penalty, StringFormat={}{0:N0} đ}" Width="120" Foreground="#C62828"/>
+                                        <DataGridTextColumn Header="Lương Thực Nhận" Binding="{Binding NetSalary, StringFormat={}{0:N0} đ}" Width="150" FontWeight="Bold"/>
+                                        
+                                        <!-- Custom status template -->
+                                        <DataGridTemplateColumn Header="Trạng thái" Width="*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border CornerRadius="8" Padding="6,2" HorizontalAlignment="Left" Margin="2">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Đã chốt">
+                                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                                        <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Đã tính">
+                                                                        <Setter Property="Background" Value="#E3F2FD"/>
+                                                                        <Setter Property="BorderBrush" Value="#BBDEFB"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="Nháp">
+                                                                        <Setter Property="Background" Value="#ECECEC"/>
+                                                                        <Setter Property="BorderBrush" Value="#DDD"/>
+                                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="{Binding Status}" FontWeight="Bold" FontSize="11">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Đã chốt">
+                                                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Đã tính">
+                                                                            <Setter Property="Foreground" Value="#1565C0"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Nháp">
+                                                                            <Setter Property="Foreground" Value="#666"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+
+                            <!-- If no payroll records -->
+                            <Border Background="#F9FAFB" CornerRadius="8" Padding="24" Margin="0,8,0,0" BorderBrush="#E5E7EB" BorderThickness="1"
+                                    Visibility="{Binding NoPayrolls, Converter={StaticResource BoolToVisConverter}}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="💵" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <TextBlock Text="Chưa có dữ liệu lương" 
+                                               Foreground="#9CA3AF" 
+                                               FontSize="13" 
+                                               FontWeight="Bold" 
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Cán bộ nhân tự này chưa có bảng lương nào được phát sinh hoặc khởi tạo trong kỳ." 
+                                               Foreground="#9CA3AF" 
+                                               FontSize="11" 
+                                               TextAlignment="Center"
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

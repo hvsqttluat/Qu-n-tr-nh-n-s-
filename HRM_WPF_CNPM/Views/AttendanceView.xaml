@@ -1,0 +1,452 @@
+<UserControl x:Class="HRM_WPF_CNPM.Views.AttendanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2000/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2000/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:local="clr-namespace:HRM_WPF_CNPM.Views"
+             xmlns:vm="clr-namespace:HRM_WPF_CNPM.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="#FAFAFA">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Page Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="QUẢN LÝ CHẤM CÔNG" 
+                       FontSize="24" 
+                       FontWeight="Black" 
+                       Foreground="#2D3A2D"/>
+            <TextBlock Text="Kế hoạch chấm công hàng ngày của toàn lữ đoàn. Kiểm soát giờ vào/ra, đề xuất trạng thái đi muộn/về sớm và đồng bộ dữ liệu nghỉ phép." 
+                       FontSize="12" 
+                       Foreground="Gray" 
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Filters Block -->
+        <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,0,0,16">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                
+                <!-- 1. Search Box -->
+                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ui:ControlHelper.PlaceholderText="Tìm mã, tên nhân viên..."
+                         Width="180"
+                         Height="34"
+                         Margin="0,0,12,0"
+                         ui:ControlHelper.CornerRadius="6"/>
+
+                <!-- 2. Department -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="Phòng ban:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding Departments}"
+                              SelectedItem="{Binding SelectedDepartmentFilter}"
+                              DisplayMemberPath="DepartmentName"
+                              Width="140"
+                              Height="34"
+                              ui:ControlHelper.PlaceholderText="Tất cả"
+                              ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- 3. Employee -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="Nhân viên:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding Employees}"
+                              SelectedItem="{Binding SelectedEmployeeFilter}"
+                              Width="150"
+                              Height="34"
+                              ui:ControlHelper.PlaceholderText="Tất cả"
+                              ui:ControlHelper.CornerRadius="6">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding FullName}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- 4. Month -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="Tháng:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding MonthFilterList}"
+                              SelectedItem="{Binding SelectedMonthFilter}"
+                              Width="90"
+                              Height="34"
+                              ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- 5. Year -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="Năm:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding YearFilterList}"
+                              SelectedItem="{Binding SelectedYearFilter}"
+                              Width="90"
+                              Height="34"
+                              ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- 6. Status -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
+                    <TextBlock Text="Trạng thái:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" FontWeight="SemiBold" Foreground="#555"/>
+                    <ComboBox ItemsSource="{Binding StatusFilterList}"
+                              SelectedItem="{Binding SelectedStatusFilter}"
+                              Width="110"
+                              Height="34"
+                              ui:ControlHelper.CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- Reload Command Button -->
+                <Button Command="{Binding LoadRecordsCommand}"
+                        Content="🔄 LÀM MỚI"
+                        Background="#ECECEC"
+                        Foreground="#333"
+                        FontWeight="Bold"
+                        Height="34"
+                        Padding="12,0"
+                        ui:ControlHelper.CornerRadius="6"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- Main Workspace (Grid Left, Form Right) -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="2.2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Grid Left: List Attendance Records -->
+            <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1" Padding="12" Margin="0,0,12,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid ItemsSource="{Binding AttendanceRecords}"
+                              SelectedItem="{Binding SelectedAttendanceRecord, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              RowHeight="42">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Mã NV" Binding="{Binding Employee.EmployeeCode}" Width="80"/>
+                            <DataGridTextColumn Header="Nhân Viên" Binding="{Binding Employee.FullName}" Width="150" FontWeight="SemiBold"/>
+                            <DataGridTextColumn Header="Phòng Ban" Binding="{Binding Employee.Department.DepartmentName}" Width="130"/>
+                            <DataGridTextColumn Header="Ngày Công" Binding="{Binding WorkDate, StringFormat={}{0:dd/MM/yyyy}}" Width="100"/>
+                            <DataGridTextColumn Header="Giờ Vào" Binding="{Binding CheckInTime, TargetNullValue='--'}" Width="80"/>
+                            <DataGridTextColumn Header="Giờ Ra" Binding="{Binding CheckOutTime, TargetNullValue='--'}" Width="80"/>
+                            <DataGridTextColumn Header="Giờ Làm" Binding="{Binding WorkHours}" Width="80" ElementStyle="{StaticResource {x:Type TextBlock}}"/>
+                            
+                            <!-- Custom Attendance Status Pill -->
+                            <DataGridTemplateColumn Header="Trạng thái" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" Margin="2">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đủ công">
+                                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                                            <Setter Property="BorderBrush" Value="#C8E6C9"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đi muộn">
+                                                            <Setter Property="Background" Value="#FFF9C4"/>
+                                                            <Setter Property="BorderBrush" Value="#FFF59D"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Về sớm">
+                                                            <Setter Property="Background" Value="#FFE0B2"/>
+                                                            <Setter Property="BorderBrush" Value="#FFCC80"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Nghỉ phép">
+                                                            <Setter Property="Background" Value="#E1F5FE"/>
+                                                            <Setter Property="BorderBrush" Value="#B3E5FC"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding AttendanceStatus}" Value="Nghỉ không phép">
+                                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                                            <Setter Property="BorderBrush" Value="#FFCDD2"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            
+                                            <TextBlock Text="{Binding AttendanceStatus}" FontWeight="Bold" FontSize="11">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đủ công">
+                                                                <Setter Property="Foreground" Value="#2E7D32"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding AttendanceStatus}" Value="Đi muộn">
+                                                                <Setter Property="Foreground" Value="#F57F17"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding AttendanceStatus}" Value="Về sớm">
+                                                                <Setter Property="Foreground" Value="#E65100"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding AttendanceStatus}" Value="Nghỉ phép">
+                                                                <Setter Property="Foreground" Value="#0288D1"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding AttendanceStatus}" Value="Nghỉ không phép">
+                                                                <Setter Property="Foreground" Value="#C62828"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Grid.Row="1"
+                               Text="* Nhấp chuột chọn một dòng tương ứng để Xem chi tiết, Cập nhật thông tin hoặc Xóa bản ghi."
+                               Foreground="Gray"
+                               FontStyle="Italic"
+                               FontSize="11"
+                               Margin="0,12,0,0"/>
+                </Grid>
+            </Border>
+
+            <!-- Grid Right: CRUD Details Form -->
+            <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1" Padding="16">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Form Title -->
+                        <TextBlock Grid.Row="0" 
+                                   Text="📝 THÔNG TIN CHI TIẾT CÔNG" 
+                                   FontSize="15" 
+                                   FontWeight="Black" 
+                                   Foreground="#2D3A2D" 
+                                   Margin="0,0,0,16"/>
+
+                        <!-- Notification Alert Labels -->
+                        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                            <!-- Error Label -->
+                            <Border Background="#FFEBEE" CornerRadius="6" Padding="12" Margin="0,0,0,8" BorderBrush="#FFCDD2" BorderThickness="1"
+                                    Visibility="{Binding ErrorMsg, Converter={x:Static ui:ControlHelper.StringToVisibilityConverter}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="⚠ " FontWeight="Bold" Foreground="#C62828" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding ErrorMsg}" Foreground="#C62828" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Success Label -->
+                            <Border Background="#E8F5E9" CornerRadius="6" Padding="12" Margin="0,0,0,8" BorderBrush="#C8E6C9" BorderThickness="1"
+                                    Visibility="{Binding SuccessMsg, Converter={x:Static ui:ControlHelper.StringToVisibilityConverter}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="✔ " FontWeight="Bold" Foreground="#2E7D32" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SuccessMsg}" Foreground="#2E7D32" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Input fields list -->
+                        <StackPanel Grid.Row="2" spacing="12">
+                            
+                            <!-- Employee Choice in Form -->
+                            <StackPanel>
+                                <TextBlock Text="Nhân viên *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding Employees}"
+                                          SelectedItem="{Binding FormEmployee}"
+                                          Height="34"
+                                          HorizontalAlignment="Stretch"
+                                          ui:ControlHelper.CornerRadius="6">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="[" FontWeight="Bold"/><TextBlock Text="{Binding EmployeeCode}" FontWeight="Bold" Foreground="#C5A059"/><TextBlock Text="]" FontWeight="Bold"/>
+                                                <TextBlock Text=" - "/>
+                                                <TextBlock Text="{Binding FullName}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Work Date -->
+                            <StackPanel>
+                                <TextBlock Text="Ngày chấm công *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                <DatePicker SelectedDate="{Binding FormWorkDate, Mode=TwoWay}"
+                                            Height="34" HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+
+                            <!-- Check-In Time and Check-Out Time -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                    <TextBlock Text="Giờ vào (Check-In) *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding FormCheckInTime, UpdateSourceTrigger=PropertyChanged}"
+                                             ui:ControlHelper.PlaceholderText="Ví dụ: 08:00"
+                                             Height="34" HorizontalAlignment="Stretch"
+                                             ui:ControlHelper.CornerRadius="6"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                    <TextBlock Text="Giờ ra (Check-Out) *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding FormCheckOutTime, UpdateSourceTrigger=PropertyChanged}"
+                                             ui:ControlHelper.PlaceholderText="Ví dụ: 17:00"
+                                             Height="34" HorizontalAlignment="Stretch"
+                                             ui:ControlHelper.CornerRadius="6"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Work Hours -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="Số giờ làm việc (Tự tính)" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding FormWorkHours, Mode=OneWay}"
+                                             IsReadOnly="True"
+                                             Background="#F3F4F6"
+                                             Height="34"
+                                             ui:ControlHelper.CornerRadius="6"/>
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Command="{Binding CalculateTimeCommand}"
+                                        Content="⚡ TÍNH GIỜ"
+                                        VerticalAlignment="Bottom"
+                                        Background="#1a241a"
+                                        Foreground="#C5A059"
+                                        FontWeight="Bold"
+                                        Height="34"
+                                        ui:ControlHelper.CornerRadius="6"/>
+                            </Grid>
+
+                            <!-- Attendance Status (suggested or manually picked) -->
+                            <StackPanel>
+                                <TextBlock Text="Trạng thái chấm công *" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding FormStatusList}"
+                                          SelectedItem="{Binding FormAttendanceStatus, Mode=TwoWay}"
+                                          Height="34"
+                                          HorizontalAlignment="Stretch"
+                                          ui:ControlHelper.CornerRadius="6"/>
+                            </StackPanel>
+
+                            <!-- Notes -->
+                            <StackPanel>
+                                <TextBlock Text="Ghi chú thêm" FontSize="12" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding FormNote, UpdateSourceTrigger=PropertyChanged}"
+                                         ui:ControlHelper.PlaceholderText="Lý do đi muộn, về sớm hoặc đi công tác ngoài..."
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         Height="55"
+                                         ui:ControlHelper.CornerRadius="6"/>
+                            </StackPanel>
+
+                            <Separator Margin="0,8,0,8" Background="#E0E0E0"/>
+
+                            <!-- Action Buttons Block -->
+                            <Grid Visibility="{Binding CanEditDelete, Converter={StaticResource BoolToVisConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Button Thêm Mới -->
+                                <Button Grid.Row="0" Grid.Column="0"
+                                        Command="{Binding AddCommand}"
+                                        Content="➕ THÊM CÔNG"
+                                        Background="#2D3A2D"
+                                        Foreground="#FFFFFF"
+                                        FontWeight="Black"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,0,4,8"
+                                        ui:ControlHelper.CornerRadius="6"/>
+
+                                <!-- Button Cập Nhật -->
+                                <Button Grid.Row="0" Grid.Column="1"
+                                        Command="{Binding UpdateCommand}"
+                                        Content="💾 CẬP NHẬT"
+                                        Background="#1a241a"
+                                        Foreground="#C5A059"
+                                        FontWeight="Black"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="4,0,0,8"
+                                        ui:ControlHelper.CornerRadius="6"/>
+
+                                <!-- Button Xóa công -->
+                                <Button Grid.Row="1" Grid.Column="0"
+                                        Command="{Binding DeleteCommand}"
+                                        Content="🗑 XÓA CÔNG"
+                                        Background="#FFF4F4"
+                                        Foreground="#C62828"
+                                        FontWeight="Black"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,0,4,0"
+                                        ui:ControlHelper.CornerRadius="6"/>
+
+                                <!-- Button Clear Form -->
+                                <Button Grid.Row="1" Grid.Column="1"
+                                        Command="{Binding ResetFormCommand}"
+                                        Content="🧹 LÀM TRẮNG"
+                                        Background="#ECECEC"
+                                        Foreground="#333"
+                                        FontWeight="Black"
+                                        Height="36"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="4,0,0,0"
+                                        ui:ControlHelper.CornerRadius="6"/>
+                            </Grid>
+
+                            <!-- Warning Label when logged in as Employee -->
+                            <Border Background="#FFF9C4" BorderBrush="#FFF59D" BorderThickness="1" CornerRadius="6" Padding="12"
+                                    Visibility="{Binding CanEditDelete, Converter={StaticResource BoolToVisConverter}, ConverterParameter=inverse}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="ℹ " FontWeight="Bold" Foreground="#F57F17" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Tài khoản của bạn chỉ có quyền XEM bảng chấm công cá nhân, không thể chỉnh sửa." 
+                                               Foreground="#F57F17" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" IsEnabled="False"/>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
