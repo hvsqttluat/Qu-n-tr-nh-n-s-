@@ -1,0 +1,83 @@
+<Window x:Class="QuanLyNhanSuWpf.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Đăng nhập hệ thống nhân sự" Height="620" Width="980"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextHintingMode="Fixed">
+    <Window.Resources>
+        <Style x:Key="OMatKhau" TargetType="PasswordBox">
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="13,10"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="{StaticResource MauNenUngDung}">
+        <Border Margin="28" Background="White" BorderBrush="#D8E0EA" BorderThickness="1" CornerRadius="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="0.95*"/>
+                    <ColumnDefinition Width="1.05*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border CornerRadius="8,0,0,8" Padding="42">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#111827" Offset="0"/>
+                            <GradientStop Color="#1F6F78" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <DockPanel LastChildFill="True">
+                        <StackPanel DockPanel.Dock="Top">
+                            <Border Width="68" Height="68" CornerRadius="8" Background="#0F766E" BorderBrush="#66CFFAFE" BorderThickness="1" HorizontalAlignment="Left">
+                                <TextBlock Text="HR" Foreground="White" FontWeight="Black" FontSize="27" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Quản trị nhân sự" Foreground="White" FontSize="30" FontWeight="SemiBold" Margin="0,26,0,8"/>
+                            <TextBlock Text="Nền tảng quản trị hồ sơ, vận hành và báo cáo nhân sự cho doanh nghiệp."
+                                       Foreground="#D9F3F1" FontSize="15" TextWrapping="Wrap" LineHeight="22"/>
+                        </StackPanel>
+
+                        <Border DockPanel.Dock="Bottom" Background="#22FFFFFF" BorderBrush="#66FFFFFF" BorderThickness="1" CornerRadius="8" Padding="18">
+                            <StackPanel>
+                                <TextBlock Text="THỜI GIAN HỆ THỐNG" Foreground="#D9F3F1" FontSize="11" FontWeight="Bold"/>
+                                <TextBlock x:Name="ThoiGianTextBlock" Foreground="White" FontSize="23" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </DockPanel>
+                </Border>
+
+                <Grid Grid.Column="1" Margin="48">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="Đăng nhập tài khoản" FontSize="28" FontWeight="SemiBold" Foreground="#172033"/>
+                        <TextBlock Text="Phiên làm việc được xác thực qua SQL Server và ghi nhận nhật ký audit." Style="{StaticResource MoTaNho}" Margin="0,8,0,28"/>
+
+                        <TextBlock Text="Tên đăng nhập" Style="{StaticResource NhanTruong}"/>
+                        <TextBox x:Name="TenDangNhapTextBox" Style="{StaticResource OThongTin}" Margin="0,0,0,14"/>
+
+                        <TextBlock Text="Mật khẩu" Style="{StaticResource NhanTruong}"/>
+                        <PasswordBox x:Name="MatKhauPasswordBox" Style="{StaticResource OMatKhau}" Margin="0,0,0,12" KeyDown="NhapMatKhau_KeyDown"/>
+
+                        <TextBlock x:Name="ThongBaoTextBlock" Foreground="{StaticResource MauNguyHiem}" FontWeight="SemiBold" TextWrapping="Wrap" MinHeight="24"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button x:Name="DangNhapButton" Content="Đăng nhập" Click="DangNhap_Click" Style="{StaticResource NutChinh}" Width="140" Margin="0,0,10,0"/>
+                            <Button Content="Thoát" Click="Thoat_Click" Style="{StaticResource NutPhu}" Width="100"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

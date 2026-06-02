@@ -1,0 +1,21 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build and publish output
+publish/
+artifacts/
+TestResults/
+*.zip
+
+# Local runtime data
+appsettings.json
+**/appsettings.json
+*.log
+*.tmp
+~$*
