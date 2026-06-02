@@ -25,7 +25,7 @@ Du an: QuanLyNhanSuWpf
 | Thiet ke CSDL | `TaiLieu_ThietKeCSDL_QuanLyNhanSuWpf.doc`, `SoDoQuanTriSql.cs`, `KhoDuLieuNhanSu.cs` | Dat |
 | Huong dan su dung | `TaiLieu_HuongDanSuDung_QuanLyNhanSuWpf.docx` | Dat |
 | Huong dan cai dat | `TaiLieu_HuongDanCaiDat_QuanLyNhanSuWpf.docx` | Dat |
-| Fluent UI hoac MAUI | WPF XAML custom style theo phong cach Fluent Design trong `App.xaml`, `LoginWindow.xaml`, `MainWindow.xaml` | Dat mot phan, khong noi la MAUI |
+| Fluent UI hoac MAUI | WPF XAML nap theme `PresentationFramework.Fluent` trong `App.xaml`, ket hop custom style theo phong cach Fluent Design | Dat |
 | Notification | Thong bao noi bo trong `MainWindow.xaml`, `ThongBaoHeThong`, `ThemThongBao`, `GuiThongBaoMoi` | Dat muc demo |
 
 ## Link Figma

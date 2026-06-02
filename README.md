@@ -93,4 +93,4 @@ Kết quả hiện tại: build sạch, test 17/17 passed, publish self-containe
 - Quản lý phiên bản: repo Git local, workflow GitHub Actions tại `.github/workflows/dotnet-desktop.yml`.
 - UI/UX Figma: bộ wireframe import vào Figma nằm tại `uiux/Figma_UIUX_Wireframes.svg`; hướng dẫn chốt link ở `uiux/README_Figma_UIUX.md`.
 - Notification: module thông báo nội bộ trong màn hình Tổng quan/Cài đặt, hỗ trợ tạo, lọc, đánh dấu đã đọc và đính kèm tệp.
-- Fluent UI: giao diện WPF XAML thiết kế theo phong cách Fluent Design; chưa dùng MAUI hoặc thư viện Fluent UI chính thức.
+- Fluent UI: giao diện WPF XAML nạp theme `PresentationFramework.Fluent` và thiết kế theo phong cách Fluent Design.

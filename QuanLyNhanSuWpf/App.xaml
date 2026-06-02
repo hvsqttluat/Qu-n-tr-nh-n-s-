@@ -3,6 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="LoginWindow.xaml">
     <Application.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="pack://application:,,,/PresentationFramework.Fluent;component/themes/fluent.light.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
+
         <SolidColorBrush x:Key="MauNenUngDung" Color="#EEF2F6"/>
         <SolidColorBrush x:Key="MauThe" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="MauTheMo" Color="#F8FAFC"/>
@@ -135,5 +140,6 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
         </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
