@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1366" height="768" viewBox="0 0 1366 768">
+<g transform="translate(0,0)">
+<rect x="0" y="0" width="1366" height="768" rx="0" fill="#EEF2F6" stroke="none"/>
+<rect x="0" y="0" width="1366" height="768" rx="0" fill="#EEF2F6" stroke="none"/>
+<rect x="110" y="90" width="520" height="560" rx="18" fill="#1F6F78" stroke="none"/>
+<text x="155" y="170" font-family="Segoe UI, Arial" font-size="34" font-weight="700" fill="#FFFFFF">Human Resource</text>
+<text x="155" y="215" font-family="Segoe UI, Arial" font-size="22" font-weight="600" fill="#DFF7F3">Quản lý nhân sự WPF</text>
+<text x="155" y="278" font-family="Segoe UI, Arial" font-size="18" font-weight="500" fill="#EAF7F6">Dashboard, phân quyền, CSDL SQL Server</text>
+<text x="155" y="312" font-family="Segoe UI, Arial" font-size="18" font-weight="500" fill="#EAF7F6">và báo cáo nhân sự trong một ứng dụng desktop.</text>
+<rect x="720" y="120" width="420" height="500" rx="14" fill="#FFFFFF" stroke="#D8E0EA"/>
+<text x="770" y="190" font-family="Segoe UI, Arial" font-size="30" font-weight="700" fill="#172033">Đăng nhập</text>
+<text x="770" y="225" font-family="Segoe UI, Arial" font-size="15" font-weight="500" fill="#64748B">Nhập tài khoản để vào hệ thống</text>
+<text x="770" y="285" font-family="Segoe UI, Arial" font-size="14" font-weight="600" fill="#475569">Tên đăng nhập</text>
+<rect x="770" y="297" width="310" height="44" rx="6" fill="#F8FAFC" stroke="#CBD5E1"/>
+<text x="770" y="371" font-family="Segoe UI, Arial" font-size="14" font-weight="600" fill="#475569">Mật khẩu</text>
+<rect x="770" y="383" width="310" height="44" rx="6" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="770" y="480" width="150" height="44" rx="8" fill="#2563EB" stroke="none"/>
+<text x="803" y="508" font-family="Segoe UI, Arial" font-size="15" font-weight="700" fill="#FFFFFF">Đăng nhập</text>
+<rect x="935" y="480" width="105" height="44" rx="8" fill="#FFFFFF" stroke="#CBD5E1"/>
+<text x="968" y="508" font-family="Segoe UI, Arial" font-size="15" font-weight="600" fill="#334155">Thoát</text>
+<text x="770" y="568" font-family="Segoe UI, Arial" font-size="13" font-weight="500" fill="#64748B">Code: LoginWindow.xaml + KhoXacThuc.cs</text>
+</g>
+</svg>

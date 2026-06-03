@@ -26,7 +26,9 @@ public static class BoDuLieuKhoiTao
         new("Ban Giám đốc", "GD001"),
         new("Phòng Kinh doanh", "TP001"),
         new("Phòng Sản xuất", "TP002"),
+        new("Phòng Kế toán", "NV003"),
         new("Phòng Nhân sự", "TP003"),
+        new("Phòng Marketing", "NV006"),
         new("Phòng Hành chính", "TP004"),
         new("Phòng Pháp chế", "TP005")
     ];
@@ -36,7 +38,9 @@ public static class BoDuLieuKhoiTao
         new("Ban Giám đốc", "Giám đốc điều hành", 55_000_000),
         new("Phòng Kinh doanh", "Trưởng phòng Kinh doanh", 28_000_000),
         new("Phòng Sản xuất", "Trưởng phòng Sản xuất", 30_000_000),
+        new("Phòng Kế toán", "Kế toán tổng hợp", 16_000_000),
         new("Phòng Nhân sự", "Trưởng phòng Nhân sự", 26_000_000),
+        new("Phòng Marketing", "Nhân viên Marketing", 15_000_000),
         new("Phòng Hành chính", "Trưởng phòng Hành chính", 24_000_000),
         new("Phòng Pháp chế", "Trưởng phòng Pháp chế", 29_000_000),
         new("Phòng Kinh doanh", "Nhân viên kinh doanh", 14_000_000),
@@ -64,8 +68,10 @@ public static class BoDuLieuKhoiTao
         {
             ("Phòng Kinh doanh", "Nhân viên kinh doanh", "TP001", 14_000_000m),
             ("Phòng Sản xuất", "Nhân viên kế hoạch sản xuất", "TP002", 13_500_000m),
+            ("Phòng Kế toán", "Kế toán tổng hợp", "NV003", 16_000_000m),
             ("Phòng Nhân sự", "Nhân viên nhân sự", "TP003", 13_000_000m),
             ("Phòng Hành chính", "Nhân viên hành chính", "TP004", 12_000_000m),
+            ("Phòng Marketing", "Nhân viên Marketing", "NV006", 15_000_000m),
             ("Phòng Pháp chế", "Chuyên viên pháp chế", "TP005", 15_000_000m)
         };
         var tenNhanVienVanPhong = new[]

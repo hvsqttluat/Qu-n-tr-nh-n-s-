@@ -168,14 +168,49 @@ public class KhoDuLieuNhanSu
         if (phongBan.MaPhongBan == 0)
         {
             await ThucThiAsync(
-                "INSERT INTO HR_Departments(Name, ManagerID) VALUES(@TenPhongBan, @MaTruongPhong)",
+                """
+                INSERT INTO HR_Departments(Name, ManagerID) VALUES(@TenPhongBan, @MaTruongPhong);
+                DECLARE @MaPhongBanMoi INT = CAST(SCOPE_IDENTITY() AS INT);
+                IF @MaTruongPhong IS NOT NULL
+                BEGIN
+                    UPDATE HR_Employees SET DepartmentID = @MaPhongBanMoi WHERE EmployeeID = @MaTruongPhong;
+                    DECLARE @GiamDocMoi INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
+                    UPDATE e
+                    SET ManagerID =
+                        CASE
+                            WHEN e.EmployeeID = @MaTruongPhong THEN
+                                CASE WHEN e.EmployeeID = @GiamDocMoi THEN NULL ELSE @GiamDocMoi END
+                            ELSE @MaTruongPhong
+                        END
+                    FROM HR_Employees e
+                    WHERE e.DepartmentID = @MaPhongBanMoi
+                      AND e.IsActive = 1;
+                END;
+                """,
                 ("@TenPhongBan", phongBan.TenPhongBan.Trim()),
                 ("@MaTruongPhong", phongBan.MaTruongPhong));
             return;
         }
 
         await ThucThiAsync(
-            "UPDATE HR_Departments SET Name=@TenPhongBan, ManagerID=@MaTruongPhong WHERE DepartmentID=@MaPhongBan",
+            """
+            UPDATE HR_Departments SET Name=@TenPhongBan, ManagerID=@MaTruongPhong WHERE DepartmentID=@MaPhongBan;
+            IF @MaTruongPhong IS NOT NULL
+            BEGIN
+                UPDATE HR_Employees SET DepartmentID = @MaPhongBan WHERE EmployeeID = @MaTruongPhong;
+                DECLARE @GiamDoc INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
+                UPDATE e
+                SET ManagerID =
+                    CASE
+                        WHEN e.EmployeeID = @MaTruongPhong THEN
+                            CASE WHEN e.EmployeeID = @GiamDoc THEN NULL ELSE @GiamDoc END
+                        ELSE @MaTruongPhong
+                    END
+                FROM HR_Employees e
+                WHERE e.DepartmentID = @MaPhongBan
+                  AND e.IsActive = 1;
+            END;
+            """,
             ("@TenPhongBan", phongBan.TenPhongBan.Trim()),
             ("@MaTruongPhong", phongBan.MaTruongPhong),
             ("@MaPhongBan", phongBan.MaPhongBan));
@@ -198,7 +233,22 @@ public class KhoDuLieuNhanSu
     public async Task GanTruongPhongAsync(int maPhongBan, int maNhanVien)
     {
         await ThucThiAsync(
-            "UPDATE HR_Departments SET ManagerID = @MaNhanVien WHERE DepartmentID = @MaPhongBan",
+            """
+            UPDATE HR_Employees SET DepartmentID = @MaPhongBan WHERE EmployeeID = @MaNhanVien;
+            UPDATE HR_Departments SET ManagerID = @MaNhanVien WHERE DepartmentID = @MaPhongBan;
+
+            DECLARE @GiamDoc INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
+            UPDATE e
+            SET ManagerID =
+                CASE
+                    WHEN e.EmployeeID = @MaNhanVien THEN
+                        CASE WHEN e.EmployeeID = @GiamDoc THEN NULL ELSE @GiamDoc END
+                    ELSE @MaNhanVien
+                END
+            FROM HR_Employees e
+            WHERE e.DepartmentID = @MaPhongBan
+              AND e.IsActive = 1;
+            """,
             ("@MaNhanVien", maNhanVien),
             ("@MaPhongBan", maPhongBan));
     }
@@ -687,6 +737,7 @@ public class KhoDuLieuNhanSu
         await DamBaoCauTrucSqlAsync(ketNoi);
         await SoDoQuanTriSql.DamBaoAsync(ketNoi);
         await DamBaoDuLieuMacDinhSqlAsync(ketNoi);
+        await DamBaoPhanCongTruongPhongHopLeSqlAsync(ketNoi);
         await TaiKhoanNhanSuSql.DamBaoTheoNhanVienAsync(ketNoi);
     }
 
@@ -1079,6 +1130,91 @@ public class KhoDuLieuNhanSu
 
         await DamBaoDuLieuNghiepVuMauSqlAsync(ketNoi);
         await DamBaoDanhGiaMauSqlAsync(ketNoi);
+    }
+
+    private static async Task DamBaoPhanCongTruongPhongHopLeSqlAsync(SqlConnection ketNoi)
+    {
+        await ThucThiTrenKetNoiAsync(ketNoi, """
+            DECLARE @GiamDoc INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
+
+            DECLARE @PhanCong TABLE
+            (
+                TenPhongBan NVARCHAR(150) NOT NULL,
+                MaNhanVien NVARCHAR(20) NULL,
+                HoTen NVARCHAR(150) NULL
+            );
+
+            INSERT INTO @PhanCong(TenPhongBan, MaNhanVien, HoTen) VALUES
+                (N'Ban Giám đốc', 'GD001', N'Nguyễn Minh Đức'),
+                (N'Phòng Kinh doanh', 'TP001', N'Trần Quốc Huy'),
+                (N'Phòng Sản xuất', 'TP002', N'Phạm Văn Long'),
+                (N'Phòng Nhân sự', 'TP003', N'Lê Thu Hà'),
+                (N'Phòng Kế toán', 'NV003', N'Bùi Thu Trang'),
+                (N'Phòng CNTT', NULL, N'Phạm Gia Dũng'),
+                (N'Phòng Marketing', 'NV006', N'Mai Ngọc Linh'),
+                (N'Phòng Hành chính', 'TP004', N'Đỗ Thị Mai'),
+                (N'Phòng Vận hành', NULL, N'Bùi Văn Hậu'),
+                (N'Phòng Chăm sóc khách hàng', NULL, N'Vũ Minh Huy'),
+                (N'Phòng Pháp chế', 'TP005', N'Vũ Anh Tuấn');
+
+            UPDATE e
+            SET DepartmentID = d.DepartmentID
+            FROM HR_Employees e
+            JOIN @PhanCong pc
+                ON (pc.MaNhanVien IS NOT NULL AND e.EmployeeCode = pc.MaNhanVien)
+                OR (pc.HoTen IS NOT NULL AND LTRIM(RTRIM(e.FullName)) = LTRIM(RTRIM(pc.HoTen)))
+            JOIN HR_Departments d ON d.Name = pc.TenPhongBan
+            WHERE e.DepartmentID <> d.DepartmentID;
+
+            UPDATE d
+            SET ManagerID = COALESCE(uuTien.EmployeeID, nhanSuDauPhong.EmployeeID)
+            FROM HR_Departments d
+            JOIN @PhanCong pc ON pc.TenPhongBan = d.Name
+            OUTER APPLY
+            (
+                SELECT TOP 1 e.EmployeeID
+                FROM HR_Employees e
+                WHERE (pc.MaNhanVien IS NOT NULL AND e.EmployeeCode = pc.MaNhanVien)
+                   OR (pc.HoTen IS NOT NULL AND LTRIM(RTRIM(e.FullName)) = LTRIM(RTRIM(pc.HoTen)))
+                ORDER BY CASE WHEN e.DepartmentID = d.DepartmentID THEN 0 ELSE 1 END, e.EmployeeID
+            ) uuTien
+            OUTER APPLY
+            (
+                SELECT TOP 1 e.EmployeeID
+                FROM HR_Employees e
+                WHERE e.DepartmentID = d.DepartmentID
+                  AND e.IsActive = 1
+                ORDER BY
+                    CASE WHEN e.PositionID IN (
+                        SELECT PositionID
+                        FROM HR_JobPositions
+                        WHERE DepartmentID = d.DepartmentID
+                          AND Name LIKE N'%Trưởng phòng%'
+                    ) THEN 0 ELSE 1 END,
+                    e.EmployeeID
+            ) nhanSuDauPhong
+            WHERE COALESCE(uuTien.EmployeeID, nhanSuDauPhong.EmployeeID) IS NOT NULL
+              AND (d.ManagerID IS NULL OR d.ManagerID <> COALESCE(uuTien.EmployeeID, nhanSuDauPhong.EmployeeID));
+
+            UPDATE e
+            SET ManagerID =
+                CASE
+                    WHEN e.EmployeeID = d.ManagerID THEN
+                        CASE WHEN e.EmployeeID = @GiamDoc THEN NULL ELSE @GiamDoc END
+                    ELSE d.ManagerID
+                END
+            FROM HR_Employees e
+            JOIN HR_Departments d ON d.DepartmentID = e.DepartmentID
+            WHERE e.IsActive = 1
+              AND d.ManagerID IS NOT NULL
+              AND ISNULL(e.ManagerID, -1) <> ISNULL(
+                    CASE
+                        WHEN e.EmployeeID = d.ManagerID THEN
+                            CASE WHEN e.EmployeeID = @GiamDoc THEN NULL ELSE @GiamDoc END
+                        ELSE d.ManagerID
+                    END,
+                    -1);
+            """);
     }
 
     private static async Task CapNhatDuLieuNhanSuKhoiTaoSqlAsync(SqlConnection ketNoi)
@@ -1623,7 +1759,25 @@ public class KhoDuLieuNhanSu
 
     private static async Task DocBang(SqlConnection ketNoi, KhoDuLieuUngDung duLieu)
     {
-        await Doc(ketNoi, "SELECT d.DepartmentID,d.Name,ISNULL(e.FullName,N'Chưa phân công') FROM HR_Departments d LEFT JOIN HR_Employees e ON d.ManagerID=e.EmployeeID ORDER BY d.DepartmentID",
+        await Doc(ketNoi, """
+            SELECT d.DepartmentID,d.Name,ISNULL(e.FullName,N'Chưa phân công')
+            FROM HR_Departments d
+            LEFT JOIN HR_Employees e ON d.ManagerID=e.EmployeeID
+            ORDER BY CASE d.Name
+                WHEN N'Ban Giám đốc' THEN 1
+                WHEN N'Phòng Nhân sự' THEN 2
+                WHEN N'Phòng Kế toán' THEN 3
+                WHEN N'Phòng Kinh doanh' THEN 4
+                WHEN N'Phòng Marketing' THEN 5
+                WHEN N'Phòng CNTT' THEN 6
+                WHEN N'Phòng Hành chính' THEN 7
+                WHEN N'Phòng Vận hành' THEN 8
+                WHEN N'Phòng Chăm sóc khách hàng' THEN 9
+                WHEN N'Phòng Pháp chế' THEN 10
+                WHEN N'Phòng Sản xuất' THEN 11
+                ELSE 99
+            END, d.Name
+            """,
             r => duLieu.PhongBan.Add(new PhongBan(r.GetInt32(0), r.GetString(1), r.GetString(2))));
         await Doc(ketNoi, "SELECT PositionID,DepartmentID,Name,ISNULL(ExpectedSalary,0),Status FROM HR_JobPositions ORDER BY PositionID",
             r => duLieu.ViTri.Add(new ViTriCongViec(r.GetInt32(0), r.GetInt32(1), r.GetString(2), r.GetDecimal(3), r.GetString(4))));

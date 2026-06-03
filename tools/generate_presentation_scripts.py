@@ -41,7 +41,7 @@ def add_heading(doc: Document, text: str, level=1):
 
 def add_para(doc: Document, text: str, bold_prefix: str | None = None):
     p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     if bold_prefix and text.startswith(bold_prefix):
         r = p.add_run(bold_prefix)
         set_run(r, 11, True)

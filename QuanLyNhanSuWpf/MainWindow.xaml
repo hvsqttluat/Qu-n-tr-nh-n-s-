@@ -717,11 +717,11 @@
                                             <TextBlock Text="Top theo từng phòng ban" Style="{StaticResource TieuDeKhuVuc}"/>
                                             <TextBlock Text="Cá nhân xuất sắc và lương cao nhất được cập nhật theo dữ liệu đánh giá, bảng lương." Style="{StaticResource MoTaNho}" Margin="0,4,0,0"/>
                                         </StackPanel>
-                                        <DataGrid DockPanel.Dock="Top" ItemsSource="{Binding TongHopPhongBanDieuHanh}" MaxHeight="260" Margin="0,0,0,14">
+                                        <DataGrid DockPanel.Dock="Top" ItemsSource="{Binding TongHopPhongBanDieuHanh}" SelectedItem="{Binding TongHopPhongBanDangChon, Mode=TwoWay}" MaxHeight="260" Margin="0,0,0,14">
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="Phòng ban" Binding="{Binding TenPhongBan}" Width="170"/>
                                                 <DataGridTextColumn Header="Quân số" Binding="{Binding SoNhanVien}" Width="90"/>
-                                                <DataGridTextColumn Header="Phụ trách" Binding="{Binding NhanSuCapCao}" Width="170"/>
+                                                <DataGridTextColumn Header="Trưởng phòng" Binding="{Binding NhanSuCapCao}" Width="170"/>
                                                 <DataGridTextColumn Header="Xuất sắc nhất" Binding="{Binding CaNhanXuatSac}" Width="180"/>
                                                 <DataGridTextColumn Header="Điểm" Binding="{Binding DiemXuatSacHienThi}" Width="70"/>
                                                 <DataGridTextColumn Header="Lương cao nhất" Binding="{Binding NhanSuLuongCao}" Width="180"/>
@@ -754,6 +754,7 @@
 
                                         <Button Content="Lưu phòng ban" Command="{Binding LuuPhongBanLenh}" Style="{StaticResource NutChinh}" Margin="0,0,0,10"/>
                                         <Button Content="Lấy dữ liệu từ dòng đang chọn" Command="{Binding SuaPhongBanLenh}" Style="{StaticResource NutPhu}" Margin="0,0,0,10"/>
+                                        <Button Content="Gán trưởng phòng đã chọn" Command="{Binding GanTruongPhongLenh}" Style="{StaticResource NutPhu}" Margin="0,0,0,10"/>
                                         <Button Content="Xóa phòng ban" Command="{Binding XoaPhongBanLenh}" Style="{StaticResource NutNguyHiem}"/>
                                     </StackPanel>
                                 </Border>

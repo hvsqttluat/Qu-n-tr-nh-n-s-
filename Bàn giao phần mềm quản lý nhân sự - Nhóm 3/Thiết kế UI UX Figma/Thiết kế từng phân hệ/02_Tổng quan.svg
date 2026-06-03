@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1366" height="768" viewBox="0 0 1366 768">
+<g transform="translate(0,0)">
+<rect x="0" y="0" width="1366" height="768" rx="0" fill="#EEF2F6" stroke="none"/>
+<rect x="0" y="0" width="250" height="768" rx="0" fill="#111827" stroke="none"/>
+<text x="28" y="44" font-family="Segoe UI, Arial" font-size="23" font-weight="700" fill="#FFFFFF">QL Nhân sự</text>
+<text x="28" y="70" font-family="Segoe UI, Arial" font-size="13" font-weight="500" fill="#9CA3AF">Nhóm 3 - WPF</text>
+<rect x="20" y="88" width="210" height="40" rx="8" fill="#E8F5F3" stroke="none"/>
+<text x="38" y="112" font-family="Segoe UI, Arial" font-size="14" font-weight="600" fill="#0F766E">Tổng quan</text>
+<rect x="20" y="136" width="210" height="40" rx="8" fill="#111827" stroke="none"/>
+<text x="38" y="160" font-family="Segoe UI, Arial" font-size="14" font-weight="500" fill="#D1D5DB">Tuyển dụng</text>
+<rect x="20" y="184" width="210" height="40" rx="8" fill="#111827" stroke="none"/>
+<text x="38" y="208" font-family="Segoe UI, Arial" font-size="14" font-weight="500" fill="#D1D5DB">Hồ sơ nhân viên</text>
+<rect x="20" y="232" width="210" height="40" rx="8" fill="#111827" stroke="none"/>
+<text x="38" y="256" font-family="Segoe UI, Arial" font-size="14" font-weight="500" fill="#D1D5DB">Cơ cấu phòng ban</text>
+<rect x="20" y="280" width="210" height="40" rx="8" fill="#111827" stroke="none"/>
+<text x="38" y="304" font-family="Segoe UI, Arial" font-size="14" font-weight="500" fill="#D1D5DB">Chấm công</text>
+<rect x="20" y="328" width="210" height="40" rx="8" fill="#111827" stroke="none"/>
+<text x="38" y="352" font-family="Segoe UI, Arial" font-size="14" font-weight="500" fill="#D1D5DB">Nghỉ phép</text>
+<rect x="20" y="376" width="210" height="40" rx="8" fill="#111827" stroke="none"/>
+<text x="38" y="400" font-family="Segoe UI, Arial" font-size="14" font-weight="500" fill="#D1D5DB">Đánh giá</text>
+<rect x="20" y="424" width="210" height="40" rx="8" fill="#111827" stroke="none"/>
+<text x="38" y="448" font-family="Segoe UI, Arial" font-size="14" font-weight="500" fill="#D1D5DB">Bảng lương</text>
+<rect x="20" y="472" width="210" height="40" rx="8" fill="#111827" stroke="none"/>
+<text x="38" y="496" font-family="Segoe UI, Arial" font-size="14" font-weight="500" fill="#D1D5DB">Báo cáo</text>
+<rect x="20" y="520" width="210" height="40" rx="8" fill="#111827" stroke="none"/>
+<text x="38" y="544" font-family="Segoe UI, Arial" font-size="14" font-weight="500" fill="#D1D5DB">Cài đặt tài khoản</text>
+<text x="285" y="48" font-family="Segoe UI, Arial" font-size="30" font-weight="700" fill="#172033">Tổng quan nhân sự</text>
+<text x="285" y="78" font-family="Segoe UI, Arial" font-size="15" font-weight="500" fill="#64748B">Dashboard hiển thị nhanh tình hình vận hành</text>
+<rect x="1060" y="36" width="150" height="34" rx="17" fill="#E8F5F3" stroke="#B7DCD7"/><text x="1076" y="59" font-family="Segoe UI, Arial" font-size="13" font-weight="600" fill="#0F766E">WPF XAML</text>
+<rect x="1180" y="36" width="150" height="34" rx="17" fill="#EEF2FF" stroke="#B7DCD7"/><text x="1196" y="59" font-family="Segoe UI, Arial" font-size="13" font-weight="600" fill="#2563EB">Binding</text>
+<rect x="285" y="115" width="220" height="92" rx="10" fill="#FFFFFF" stroke="#D8E0EA"/>
+<text x="307" y="148" font-family="Segoe UI, Arial" font-size="14" font-weight="600" fill="#64748B">Tổng nhân viên</text>
+<text x="307" y="184" font-family="Segoe UI, Arial" font-size="30" font-weight="700" fill="#172033">16</text>
+<rect x="535" y="115" width="220" height="92" rx="10" fill="#FFFFFF" stroke="#D8E0EA"/>
+<text x="557" y="148" font-family="Segoe UI, Arial" font-size="14" font-weight="600" fill="#64748B">Nghỉ phép</text>
+<text x="557" y="184" font-family="Segoe UI, Arial" font-size="30" font-weight="700" fill="#0F766E">24</text>
+<rect x="785" y="115" width="220" height="92" rx="10" fill="#FFFFFF" stroke="#D8E0EA"/>
+<text x="807" y="148" font-family="Segoe UI, Arial" font-size="14" font-weight="600" fill="#64748B">Chấm công</text>
+<text x="807" y="184" font-family="Segoe UI, Arial" font-size="30" font-weight="700" fill="#B45309">32</text>
+<rect x="1035" y="115" width="220" height="92" rx="10" fill="#FFFFFF" stroke="#D8E0EA"/>
+<text x="1057" y="148" font-family="Segoe UI, Arial" font-size="14" font-weight="600" fill="#64748B">Thông báo</text>
+<text x="1057" y="184" font-family="Segoe UI, Arial" font-size="30" font-weight="700" fill="#2563EB">40</text>
+<rect x="285" y="235" width="650" height="410" rx="10" fill="#FFFFFF" stroke="#D8E0EA"/>
+<text x="312" y="272" font-family="Segoe UI, Arial" font-size="19" font-weight="700" fill="#172033">Danh sách dữ liệu</text>
+<rect x="312" y="305" width="192" height="36" rx="4" fill="#1F6F78" stroke="none"/>
+<text x="322" y="329" font-family="Segoe UI, Arial" font-size="12" font-weight="700" fill="#FFFFFF">Thông báo mới</text>
+<rect x="508" y="305" width="192" height="36" rx="4" fill="#1F6F78" stroke="none"/>
+<text x="518" y="329" font-family="Segoe UI, Arial" font-size="12" font-weight="700" fill="#FFFFFF">Ai đang nghỉ</text>
+<rect x="704" y="305" width="192" height="36" rx="4" fill="#1F6F78" stroke="none"/>
+<text x="714" y="329" font-family="Segoe UI, Arial" font-size="12" font-weight="700" fill="#FFFFFF">Báo cáo kỳ này</text>
+<rect x="312" y="352" width="590" height="44" rx="4" fill="#F8FAFC" stroke="#E2E8F0"/>
+<text x="322" y="380" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 1</text>
+<text x="518" y="380" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 1</text>
+<text x="714" y="380" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 1</text>
+<rect x="312" y="404" width="590" height="44" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="322" y="432" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 2</text>
+<text x="518" y="432" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 2</text>
+<text x="714" y="432" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 2</text>
+<rect x="312" y="456" width="590" height="44" rx="4" fill="#F8FAFC" stroke="#E2E8F0"/>
+<text x="322" y="484" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 3</text>
+<text x="518" y="484" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 3</text>
+<text x="714" y="484" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 3</text>
+<rect x="312" y="508" width="590" height="44" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="322" y="536" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 4</text>
+<text x="518" y="536" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 4</text>
+<text x="714" y="536" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 4</text>
+<rect x="312" y="560" width="590" height="44" rx="4" fill="#F8FAFC" stroke="#E2E8F0"/>
+<text x="322" y="588" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 5</text>
+<text x="518" y="588" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 5</text>
+<text x="714" y="588" font-family="Segoe UI, Arial" font-size="12" font-weight="500" fill="#475569">Dữ liệu 5</text>
+<rect x="970" y="235" width="305" height="410" rx="10" fill="#FFFFFF" stroke="#D8E0EA"/>
+<text x="995" y="272" font-family="Segoe UI, Arial" font-size="19" font-weight="700" fill="#172033">Form thao tác</text>
+<text x="995" y="305" font-family="Segoe UI, Arial" font-size="13" font-weight="600" fill="#475569">Bộ lọc kỳ</text>
+<rect x="995" y="315" width="240" height="34" rx="5" fill="#F8FAFC" stroke="#CBD5E1"/>
+<text x="995" y="363" font-family="Segoe UI, Arial" font-size="13" font-weight="600" fill="#475569">Biểu đồ quân số</text>
+<rect x="995" y="373" width="240" height="34" rx="5" fill="#F8FAFC" stroke="#CBD5E1"/>
+<text x="995" y="421" font-family="Segoe UI, Arial" font-size="13" font-weight="600" fill="#475569">Tạo thông báo</text>
+<rect x="995" y="431" width="240" height="34" rx="5" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="995" y="590" width="120" height="38" rx="8" fill="#2563EB" stroke="none"/>
+<text x="1024" y="614" font-family="Segoe UI, Arial" font-size="14" font-weight="700" fill="#FFFFFF">Lưu</text>
+<rect x="1126" y="590" width="110" height="38" rx="8" fill="#FFFFFF" stroke="#CBD5E1"/>
+<text x="1154" y="614" font-family="Segoe UI, Arial" font-size="14" font-weight="600" fill="#334155">Hủy</text>
+<rect x="285" y="670" width="990" height="50" rx="10" fill="#FFFFFF" stroke="#D8E0EA"/>
+<text x="310" y="701" font-family="Segoe UI, Arial" font-size="13" font-weight="600" fill="#475569">Grid Tổng quan trong MainWindow.xaml | Có KPI, biểu đồ, thông báo | Phục vụ xem nhanh trước khi vào phân hệ</text>
+</g>
+</svg>

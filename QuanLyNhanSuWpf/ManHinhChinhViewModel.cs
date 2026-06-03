@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -17,6 +18,14 @@ public class LenhGiaoDien(Action<object?> thucThi, Predicate<object?>? coTheThuc
     public bool CanExecute(object? parameter) => coTheThucThi?.Invoke(parameter) ?? true;
     public void Execute(object? parameter) => thucThi(parameter);
     public void LamMoi() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+}
+
+public sealed class SoSanhNhanVienTheoUuTien(ManHinhChinhViewModel manHinh) : IComparer
+{
+    public int Compare(object? x, object? y)
+    {
+        return manHinh.SoSanhNhanVien(x as NhanVien, y as NhanVien);
+    }
 }
 
 public class ManHinhChinhViewModel : DoiTuongThongBao
@@ -53,6 +62,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private NhanVien? nhanVienDangChon;
     private NhanVien bieuMauNhanVien = new();
     private PhongBan? phongBanDangChon;
+    private TongHopPhongBanDieuHanh? tongHopPhongBanDangChon;
     private UngVien? ungVienDangChon;
     private ChamCong? chamCongDangChon;
     private NghiPhep? nghiPhepDangChon;
@@ -390,7 +400,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public bool DangHienThongBaoNhanh { get => dangHienThongBaoNhanh; set { dangHienThongBaoNhanh = value; BaoThayDoi(); BaoThayDoi(nameof(HienThiThongBaoNhanh)); } }
     public NhanVien? NhanVienDangChon { get => nhanVienDangChon; set { nhanVienDangChon = value is not null && !CoTheXemNhanVien(value) ? null : value; BaoThayDoi(); NeuDangSuaNhanVienThiNapBieuMau(); LamMoiLenhChonNhanVien(); } }
     public NhanVien BieuMauNhanVien { get => bieuMauNhanVien; set { bieuMauNhanVien = value; BaoThayDoi(); } }
-    public PhongBan? PhongBanDangChon { get => phongBanDangChon; set { phongBanDangChon = value; BaoThayDoi(); NeuDangSuaPhongBanThiNapBieuMau(); LamMoiLenhChonPhongBan(); } }
+    public PhongBan? PhongBanDangChon { get => phongBanDangChon; set { phongBanDangChon = value; BaoThayDoi(); DongBoDongTongHopPhongBanDangChon(); NeuDangSuaPhongBanThiNapBieuMau(); LamMoiLenhChonPhongBan(); } }
+    public TongHopPhongBanDieuHanh? TongHopPhongBanDangChon { get => tongHopPhongBanDangChon; set { tongHopPhongBanDangChon = value; BaoThayDoi(); ChonPhongBanTuTongHop(value); } }
     public UngVien? UngVienDangChon { get => ungVienDangChon; set { ungVienDangChon = value; BaoThayDoi(); (ChuyenUngVienThanhNhanVienLenh as LenhGiaoDien)?.LamMoi(); (ChuyenGiaiDoanUngVienLenh as LenhGiaoDien)?.LamMoi(); (XuatHopDongLamViecLenh as LenhGiaoDien)?.LamMoi(); } }
     public ChamCong? ChamCongDangChon { get => chamCongDangChon; set { chamCongDangChon = value; BaoThayDoi(); (DieuChinhCongLenh as LenhGiaoDien)?.LamMoi(); } }
     public NghiPhep? NghiPhepDangChon { get => nghiPhepDangChon; set { nghiPhepDangChon = value; BaoThayDoi(); (DuyetNghiPhepLenh as LenhGiaoDien)?.LamMoi(); (TuChoiNghiPhepLenh as LenhGiaoDien)?.LamMoi(); } }
@@ -463,7 +474,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public ObservableCollection<MucUngVienTheoViTri> DuLieuUngVienTheoViTri { get => duLieuUngVienTheoViTri; private set { duLieuUngVienTheoViTri = value; BaoThayDoi(); } }
     public ObservableCollection<DongTraCuuNhanSu> DanhSachNhanSuTraCuu { get => danhSachNhanSuTraCuu; private set { danhSachNhanSuTraCuu = value; BaoThayDoi(); } }
     public ObservableCollection<TongHopPhongBanDieuHanh> TongHopPhongBanDieuHanh { get => tongHopPhongBanDieuHanh; private set { tongHopPhongBanDieuHanh = value; BaoThayDoi(); } }
-    public IReadOnlyList<NhanVien> NhanVienTrongPhamVi => LayNhanVienTrongPhamVi().OrderBy(n => n.ThuTuChucVu).ThenBy(n => n.PhongBan).ThenBy(n => n.HoTen).ToList();
+    public IReadOnlyList<NhanVien> NhanVienTrongPhamVi => SapXepNhanVienTheoUuTien(LayNhanVienTrongPhamVi()).ToList();
     public IReadOnlyList<PhongBan> PhongBanTrongPhamVi => LayPhongBanTrongPhamVi().OrderBy(p => p.TenPhongBan).ToList();
     public IReadOnlyList<ViTriCongViec> ViTriTrongPhamVi => DuLieu.ViTri.Where(v => PhongBanTrongPhamVi.Any(p => p.MaPhongBan == v.MaPhongBan)).OrderBy(v => v.TenViTri).ToList();
     public IReadOnlyList<string> CacPhongBanTraCuu { get => cacPhongBanTraCuu; private set { cacPhongBanTraCuu = value; BaoThayDoi(); } }
@@ -586,13 +597,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         var ketQua = await khoDuLieu.TaiDuLieuAsync();
         DuLieu = ketQua.DuLieu;
         NguonDuLieu = ketQua.NguonDuLieu;
-        DanhSachNhanVienView = CollectionViewSource.GetDefaultView(DuLieu.NhanVien);
-        DanhSachNhanVienView.Filter = LocNhanVien;
-        DanhSachNhanVienView.SortDescriptions.Clear();
-        DanhSachNhanVienView.SortDescriptions.Add(new SortDescription(nameof(NhanVien.ThuTuChucVu), ListSortDirection.Ascending));
-        DanhSachNhanVienView.SortDescriptions.Add(new SortDescription(nameof(NhanVien.PhongBan), ListSortDirection.Ascending));
-        DanhSachNhanVienView.SortDescriptions.Add(new SortDescription(nameof(NhanVien.HoTen), ListSortDirection.Ascending));
-        BaoThayDoi(nameof(DanhSachNhanVienView));
+        CauHinhDanhSachNhanVienView();
         DanhSachThongBaoView = CollectionViewSource.GetDefaultView(DuLieu.ThongBao);
         DanhSachThongBaoView.Filter = LocThongBao;
         BaoThayDoi(nameof(DanhSachThongBaoView));
@@ -626,6 +631,25 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         NhanVienDangChon = ChonNhanVienTrongPhamVi(maNhanVienDangChon, tenNhanVienDangChon);
     }
 
+    private void CauHinhDanhSachNhanVienView()
+    {
+        DanhSachNhanVienView = CollectionViewSource.GetDefaultView(DuLieu.NhanVien);
+        DanhSachNhanVienView.Filter = LocNhanVien;
+        DanhSachNhanVienView.SortDescriptions.Clear();
+        if (DanhSachNhanVienView is ListCollectionView danhSach)
+        {
+            danhSach.CustomSort = new SoSanhNhanVienTheoUuTien(this);
+        }
+        else
+        {
+            DanhSachNhanVienView.SortDescriptions.Add(new SortDescription(nameof(NhanVien.ThuTuChucVu), ListSortDirection.Ascending));
+            DanhSachNhanVienView.SortDescriptions.Add(new SortDescription(nameof(NhanVien.PhongBan), ListSortDirection.Ascending));
+            DanhSachNhanVienView.SortDescriptions.Add(new SortDescription(nameof(NhanVien.HoTen), ListSortDirection.Ascending));
+        }
+
+        BaoThayDoi(nameof(DanhSachNhanVienView));
+    }
+
     private NhanVien? ChonNhanVienTrongPhamVi(int? maNhanVienDangChon = null, string? tenNhanVienDangChon = null)
     {
         var danhSach = NhanVienTrongPhamVi;
@@ -657,6 +681,85 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         ?? "Chưa xác định";
 
     private IEnumerable<NhanVien> LayNhanVienTrongPhamVi() => DuLieu.NhanVien.Where(CoTheXemNhanVien);
+
+    private IEnumerable<NhanVien> SapXepNhanVienTheoUuTien(IEnumerable<NhanVien> danhSach)
+    {
+        return danhSach
+            .OrderBy(nhanVien => LaTruongPhongChinhThuc(nhanVien) ? 0 : 1)
+            .ThenBy(nhanVien => LayThuTuPhongBan(nhanVien.MaPhongBan, nhanVien.PhongBan))
+            .ThenBy(nhanVien => nhanVien.ThuTuChucVu)
+            .ThenBy(nhanVien => nhanVien.HoTen);
+    }
+
+    internal int SoSanhNhanVien(NhanVien? trai, NhanVien? phai)
+    {
+        if (ReferenceEquals(trai, phai))
+        {
+            return 0;
+        }
+
+        if (trai is null)
+        {
+            return 1;
+        }
+
+        if (phai is null)
+        {
+            return -1;
+        }
+
+        var ketQua = (LaTruongPhongChinhThuc(trai) ? 0 : 1).CompareTo(LaTruongPhongChinhThuc(phai) ? 0 : 1);
+        if (ketQua != 0) return ketQua;
+
+        ketQua = LayThuTuPhongBan(trai.MaPhongBan, trai.PhongBan).CompareTo(LayThuTuPhongBan(phai.MaPhongBan, phai.PhongBan));
+        if (ketQua != 0) return ketQua;
+
+        ketQua = trai.ThuTuChucVu.CompareTo(phai.ThuTuChucVu);
+        if (ketQua != 0) return ketQua;
+
+        return string.Compare(trai.HoTen, phai.HoTen, StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    private bool LaTruongPhongChinhThuc(NhanVien nhanVien)
+    {
+        return LaTruongPhongChinhThuc(nhanVien.HoTen, nhanVien.MaPhongBan, nhanVien.PhongBan);
+    }
+
+    private bool LaTruongPhongChinhThuc(string hoTen, string tenPhongBan)
+    {
+        var phongBan = DuLieu.PhongBan.FirstOrDefault(p => string.Equals(p.TenPhongBan, tenPhongBan, StringComparison.OrdinalIgnoreCase));
+        return phongBan is not null && LaTruongPhongChinhThuc(hoTen, phongBan.MaPhongBan, tenPhongBan);
+    }
+
+    private bool LaTruongPhongChinhThuc(string hoTen, int maPhongBan, string tenPhongBan)
+    {
+        var phongBan = DuLieu.PhongBan.FirstOrDefault(p => p.MaPhongBan == maPhongBan)
+            ?? DuLieu.PhongBan.FirstOrDefault(p => string.Equals(p.TenPhongBan, tenPhongBan, StringComparison.OrdinalIgnoreCase));
+        return phongBan is not null
+            && !string.IsNullOrWhiteSpace(phongBan.TruongPhong)
+            && !phongBan.TruongPhong.Contains("Chưa phân công", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(phongBan.TruongPhong, hoTen, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private int LayThuTuPhongBan(int maPhongBan, string tenPhongBan)
+    {
+        for (var i = 0; i < DuLieu.PhongBan.Count; i++)
+        {
+            var phongBan = DuLieu.PhongBan[i];
+            if (phongBan.MaPhongBan == maPhongBan
+                || string.Equals(phongBan.TenPhongBan, tenPhongBan, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return 10_000 + maPhongBan;
+    }
+
+    private int LayThuTuPhongBan(string tenPhongBan)
+    {
+        return LayThuTuPhongBan(0, tenPhongBan);
+    }
 
     private IEnumerable<PhongBan> LayPhongBanTrongPhamVi()
     {
@@ -1462,6 +1565,35 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         };
     }
 
+    private void ChonPhongBanTuTongHop(TongHopPhongBanDieuHanh? tongHop)
+    {
+        if (tongHop is null)
+        {
+            return;
+        }
+
+        var phongBan = DuLieu.PhongBan.FirstOrDefault(p =>
+            p.TenPhongBan.Equals(tongHop.TenPhongBan, StringComparison.OrdinalIgnoreCase));
+        if (phongBan is not null && !Equals(PhongBanDangChon, phongBan))
+        {
+            PhongBanDangChon = phongBan;
+        }
+    }
+
+    private void DongBoDongTongHopPhongBanDangChon()
+    {
+        var dongTongHop = PhongBanDangChon is null
+            ? null
+            : TongHopPhongBanDieuHanh.FirstOrDefault(x =>
+                x.TenPhongBan.Equals(PhongBanDangChon.TenPhongBan, StringComparison.OrdinalIgnoreCase));
+
+        if (!Equals(tongHopPhongBanDangChon, dongTongHop))
+        {
+            tongHopPhongBanDangChon = dongTongHop;
+            BaoThayDoi(nameof(TongHopPhongBanDangChon));
+        }
+    }
+
     private async Task LuuPhongBan()
     {
         if (string.IsNullOrWhiteSpace(BieuMauPhongBan.TenPhongBan))
@@ -1566,8 +1698,15 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private async Task GanTruongPhong()
     {
         if (PhongBanDangChon is null) return;
-        var truongPhong = NhanVienDangChon ?? DuLieu.NhanVien.FirstOrDefault(x => x.MaPhongBan == PhongBanDangChon.MaPhongBan) ?? DuLieu.NhanVien.FirstOrDefault();
-        if (truongPhong is null) return;
+        var truongPhong = DuLieu.NhanVien.FirstOrDefault(x => x.MaNhanVien == BieuMauPhongBan.MaTruongPhong)
+            ?? NhanVienDangChon
+            ?? DuLieu.NhanVien.FirstOrDefault(x => x.MaPhongBan == PhongBanDangChon.MaPhongBan)
+            ?? DuLieu.NhanVien.FirstOrDefault();
+        if (truongPhong is null)
+        {
+            MessageBox.Show("Chưa có nhân viên để gán làm trưởng phòng.", "Gán trưởng phòng", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
 
         await ChayLenhDuLieu(async () =>
         {
@@ -1577,10 +1716,18 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 var viTri = DuLieu.PhongBan.IndexOf(PhongBanDangChon);
                 if (viTri >= 0)
                 {
-                    DuLieu.PhongBan[viTri] = PhongBanDangChon with { TruongPhong = truongPhong.HoTen };
+                    PhongBanDangChon = PhongBanDangChon with { TruongPhong = truongPhong.HoTen };
+                    DuLieu.PhongBan[viTri] = PhongBanDangChon;
                 }
             }
 
+            BieuMauPhongBan = new BieuMauPhongBan
+            {
+                MaPhongBan = PhongBanDangChon.MaPhongBan,
+                TenPhongBan = PhongBanDangChon.TenPhongBan,
+                MaTruongPhong = truongPhong.MaNhanVien
+            };
+            BaoCaoThongKe();
             BaoDaXong("Cập nhật trưởng phòng", $"{truongPhong.HoTen} đã được phân công phụ trách {PhongBanDangChon.TenPhongBan}.", "Phòng ban");
         });
     }
@@ -2347,9 +2494,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
             DuLieu = banSao.TaoKhoDuLieu();
             NguonDuLieu = $"Bản phục hồi cục bộ - {Path.GetFileName(hopThoai.FileName)}";
-            DanhSachNhanVienView = CollectionViewSource.GetDefaultView(DuLieu.NhanVien);
-            DanhSachNhanVienView.Filter = LocNhanVien;
-            BaoThayDoi(nameof(DanhSachNhanVienView));
+            CauHinhDanhSachNhanVienView();
             DanhSachThongBaoView = CollectionViewSource.GetDefaultView(DuLieu.ThongBao);
             DanhSachThongBaoView.Filter = LocThongBao;
             BaoThayDoi(nameof(DanhSachThongBaoView));
@@ -2691,17 +2836,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             .ToList();
 
         var thuTuPhongBan = LayPhongBanTrongPhamVi()
-            .Select(phongBan =>
-            {
-                var thuTu = tatCaNhanSu
-                    .Where(x => string.Equals(x.PhongBan, phongBan.TenPhongBan, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(x => x.ThuTuCapBac)
-                    .ThenByDescending(x => x.ThucLanh)
-                    .Select(x => x.ThuTuCapBac)
-                    .FirstOrDefault(99);
-
-                return new { phongBan.TenPhongBan, ThuTu = thuTu };
-            })
+            .Select(phongBan => new { phongBan.TenPhongBan, ThuTu = LayThuTuPhongBan(phongBan.MaPhongBan, phongBan.TenPhongBan) })
             .OrderBy(x => x.ThuTu)
             .ThenBy(x => x.TenPhongBan)
             .ToList();
@@ -2714,10 +2849,15 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 var nhanSu = tatCaNhanSu
                     .Where(x => string.Equals(x.PhongBan, phongBan.TenPhongBan, StringComparison.OrdinalIgnoreCase))
                     .Where(x => KiemTraTuKhoaTraCuu(x, tuKhoa))
-                    .OrderBy(x => x.ThuTuCapBac)
+                    .OrderBy(x => LaTruongPhongChinhThuc(x.HoTen, x.PhongBan) ? 0 : 1)
+                    .ThenBy(x => x.ThuTuCapBac)
                     .ThenByDescending(x => x.ThucLanh)
                     .ToList();
-                var caoNhat = nhanSu.FirstOrDefault();
+                var truongPhong = DuLieu.NhanVien.FirstOrDefault(nhanVien =>
+                        string.Equals(nhanVien.HoTen, phongBan.TruongPhong, StringComparison.OrdinalIgnoreCase)
+                        && nhanVien.MaPhongBan == phongBan.MaPhongBan)
+                    ?? DuLieu.NhanVien.FirstOrDefault(nhanVien =>
+                        string.Equals(nhanVien.HoTen, phongBan.TruongPhong, StringComparison.OrdinalIgnoreCase));
                 var xuatSac = nhanSu
                     .Where(x => x.DiemDanhGia.HasValue)
                     .OrderByDescending(x => x.DiemDanhGia)
@@ -2731,10 +2871,10 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 var diemXuatSac = xuatSac?.DiemDanhGia;
 
                 return new TongHopPhongBanDieuHanh(
-                    caoNhat?.ThuTuCapBac ?? 99,
+                    LayThuTuPhongBan(phongBan.MaPhongBan, phongBan.TenPhongBan),
                     phongBan.TenPhongBan,
-                    caoNhat?.HoTen ?? phongBan.TruongPhong,
-                    caoNhat?.ViTri ?? "Chưa bố trí",
+                    phongBan.TruongPhong,
+                    truongPhong?.ViTri ?? "Chưa bố trí",
                     nhanSu.Count(x => !nghiPhepHomNay.Contains(x.HoTen)),
                     nhanSu.Sum(x => x.ThucLanh),
                     xuatSac?.HoTen ?? "Chưa có đánh giá",
@@ -2787,8 +2927,9 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 .Where(x => dangLocTatCaPhongBan
                     || string.Equals(x.PhongBan, PhongBanTraCuuDangChon, StringComparison.OrdinalIgnoreCase))
                 .Where(x => KiemTraTuKhoaTraCuu(x, tuKhoa))
-                .OrderBy(x => x.ThuTuCapBac)
-                .ThenBy(x => x.PhongBan)
+                .OrderBy(x => LaTruongPhongChinhThuc(x.HoTen, x.PhongBan) ? 0 : 1)
+                .ThenBy(x => LayThuTuPhongBan(x.PhongBan))
+                .ThenBy(x => x.ThuTuCapBac)
                 .ThenByDescending(x => x.ThucLanh)
                 .ThenBy(x => x.HoTen));
 
