@@ -1,0 +1,592 @@
+<Window x:Class="QuanLyNhanSuWpf.ThietKeGiaoDienWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Thiết kế giao diện từng phân hệ" Height="820" Width="1366"
+        WindowStartupLocation="CenterScreen" Background="#EEF2F6">
+    <Window.Resources>
+        <Style x:Key="PreviewCard" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D8E0EA"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Margin" Value="0,0,16,16"/>
+        </Style>
+
+        <Style x:Key="PreviewTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#172033"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+
+        <Style x:Key="PreviewSubTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#64748B"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,18"/>
+        </Style>
+
+        <Style x:Key="PreviewLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#475569"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+
+        <Style x:Key="PreviewInput" TargetType="Border">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+
+        <Style x:Key="PreviewButton" TargetType="Border">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="14,9"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+
+        <Style x:Key="PreviewButtonText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="PreviewTableHeader" TargetType="Border">
+            <Setter Property="Background" Value="#1F6F78"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+        </Style>
+
+        <Style x:Key="PreviewTableCell" TargetType="Border">
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Margin" Value="0,4,4,0"/>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="MinWidth" Value="170"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <TabControl Margin="18"
+                    TabStripPlacement="Left"
+                    SelectedIndex="0"
+                    Background="Transparent"
+                    BorderThickness="0">
+            <TabItem Header="Mục lục thiết kế">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="22">
+                        <TextBlock Text="Bộ thiết kế giao diện phần mềm quản lý nhân sự" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Mỗi mục bên trái là một màn hình hoặc một phân hệ trong phần mềm. Khi báo cáo, mở file này bằng Visual Studio Designer và chọn từng mục để trình bày." Style="{StaticResource PreviewSubTitle}"/>
+
+                        <UniformGrid Columns="3">
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="01. Đăng nhập" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Xác thực tài khoản, mật khẩu, mở phiên làm việc." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="File thật: LoginWindow.xaml" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="02. Tổng quan" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Dashboard, số liệu nhanh, biểu đồ, thông báo." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="File thật: MainWindow.xaml" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="03. Tuyển dụng" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Danh sách ứng viên, trạng thái hồ sơ, thao tác thêm sửa." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Phân hệ: Ứng viên" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="04. Nhân viên" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Hồ sơ nhân sự, chức vụ, phòng ban, trạng thái làm việc." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Phân hệ: Hồ sơ nhân viên" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="05. Phòng ban" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Cơ cấu tổ chức, số lượng nhân viên, trưởng phòng." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Phân hệ: Phòng ban" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="06. Chấm công" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Check-in, check-out, giờ làm, trạng thái đi muộn." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Phân hệ: Chấm công" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="07. Nghỉ phép" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Tạo đơn nghỉ phép, duyệt đơn, theo dõi số ngày nghỉ." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Phân hệ: Nghỉ phép" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="08. Đánh giá" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Điểm hiệu suất, xếp loại, nhận xét nhân viên." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Phân hệ: Đánh giá" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="09. Bảng lương" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Lương cơ bản, phụ cấp, khấu trừ, thực lĩnh." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Phân hệ: Bảng lương" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="10. Báo cáo" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Xuất báo cáo, tổng hợp nhân sự, lương, nghỉ phép." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Phân hệ: Báo cáo" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="11. Tài khoản" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Thông tin người dùng, đổi mật khẩu, vai trò tài khoản." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Phân hệ: Cài đặt tài khoản" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PreviewCard}">
+                                <StackPanel>
+                                    <TextBlock Text="12. Thông báo" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Nhắc việc hợp đồng, nghỉ phép, chấm công, tin nội bộ." Foreground="#64748B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Bonus: Notification" Foreground="#1F6F78" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Đăng nhập">
+                <Grid Background="#EEF2F6" Margin="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.1*"/>
+                        <ColumnDefinition Width="0.9*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Background="#1F6F78" CornerRadius="18" Padding="46" Margin="30">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Human Resource" FontSize="38" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Phần mềm quản lý nhân sự WPF" FontSize="22" FontWeight="SemiBold" Foreground="#DFF7F3" Margin="0,12,0,30"/>
+                            <TextBlock Text="Dashboard, phân quyền, SQL Server, báo cáo và thông báo nội bộ trong một ứng dụng desktop." FontSize="18" Foreground="#EAF7F6" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1" Style="{StaticResource PreviewCard}" Padding="44" Margin="30">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Đăng nhập hệ thống" Style="{StaticResource PreviewTitle}"/>
+                            <TextBlock Text="Người dùng nhập tài khoản và mật khẩu để tạo phiên đăng nhập." Style="{StaticResource PreviewSubTitle}"/>
+                            <TextBlock Text="Tên đăng nhập" Style="{StaticResource PreviewLabel}"/>
+                            <Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Mật khẩu" Style="{StaticResource PreviewLabel}"/>
+                            <Border Style="{StaticResource PreviewInput}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PreviewButton}" Width="130">
+                                    <TextBlock Text="Đăng nhập" Style="{StaticResource PreviewButtonText}"/>
+                                </Border>
+                                <Border Height="38" Width="90" Background="#EFF6FF" CornerRadius="7">
+                                    <TextBlock Text="Thoát" Foreground="#2563EB" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="Hiện thực: LoginWindow.xaml + KhoXacThuc.cs" Foreground="#64748B" Margin="0,28,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Tổng quan">
+                <Grid Margin="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Background="#111827" Padding="22">
+                        <StackPanel>
+                            <TextBlock Text="QL Nhân sự" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Sidebar phân hệ" Foreground="#9CA3AF" Margin="0,4,0,26"/>
+                            <TextBlock Text="Tổng quan" Foreground="#0F766E" Background="#E8F5F3" FontWeight="SemiBold" Padding="12" Margin="0,0,0,8"/>
+                            <TextBlock Text="Tuyển dụng" Foreground="#D1D5DB" Padding="12"/>
+                            <TextBlock Text="Hồ sơ nhân viên" Foreground="#D1D5DB" Padding="12"/>
+                            <TextBlock Text="Chấm công" Foreground="#D1D5DB" Padding="12"/>
+                            <TextBlock Text="Bảng lương" Foreground="#D1D5DB" Padding="12"/>
+                            <TextBlock Text="Báo cáo" Foreground="#D1D5DB" Padding="12"/>
+                        </StackPanel>
+                    </Border>
+                    <ScrollViewer Grid.Column="1">
+                        <StackPanel Margin="28">
+                            <TextBlock Text="Tổng quan nhân sự" Style="{StaticResource PreviewTitle}"/>
+                            <TextBlock Text="Thiết kế dashboard để người quản lý nhìn nhanh quân số, chấm công, nghỉ phép và thông báo." Style="{StaticResource PreviewSubTitle}"/>
+                            <UniformGrid Columns="4">
+                                <Border Style="{StaticResource PreviewCard}">
+                                    <StackPanel><TextBlock Text="Tổng nhân viên" Foreground="#64748B"/><TextBlock Text="128" FontSize="32" FontWeight="Bold"/></StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource PreviewCard}">
+                                    <StackPanel><TextBlock Text="Đang làm" Foreground="#64748B"/><TextBlock Text="120" FontSize="32" FontWeight="Bold" Foreground="#0F766E"/></StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource PreviewCard}">
+                                    <StackPanel><TextBlock Text="Nghỉ phép" Foreground="#64748B"/><TextBlock Text="8" FontSize="32" FontWeight="Bold" Foreground="#B45309"/></StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource PreviewCard}">
+                                    <StackPanel><TextBlock Text="Thông báo" Foreground="#64748B"/><TextBlock Text="5" FontSize="32" FontWeight="Bold" Foreground="#2563EB"/></StackPanel>
+                                </Border>
+                            </UniformGrid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.2*"/>
+                                    <ColumnDefinition Width="0.8*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Style="{StaticResource PreviewCard}" Height="300">
+                                    <StackPanel>
+                                        <TextBlock Text="Biểu đồ và thống kê theo kỳ" FontSize="18" FontWeight="SemiBold"/>
+                                        <Border Height="190" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="8" Margin="0,18,0,0">
+                                            <TextBlock Text="BieuDoTronNhanSu + KPI theo kỳ" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#64748B"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Style="{StaticResource PreviewCard}" Height="300">
+                                    <StackPanel>
+                                        <TextBlock Text="Trung tâm thông báo" FontSize="18" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Tạo thông báo, lọc chưa đọc, mở tệp đính kèm." TextWrapping="Wrap" Foreground="#64748B" Margin="0,12,0,20"/>
+                                        <Border Style="{StaticResource PreviewButton}" Width="150">
+                                            <TextBlock Text="Tạo thông báo" Style="{StaticResource PreviewButtonText}"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Tuyển dụng">
+                <Grid Margin="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.ColumnSpan="2">
+                        <TextBlock Text="Tuyển dụng / Ứng viên" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Theo dõi ứng viên theo vị trí, giai đoạn và chuyển ứng viên thành nhân viên." Style="{StaticResource PreviewSubTitle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="0" Style="{StaticResource PreviewCard}" Margin="0,92,18,0">
+                        <StackPanel>
+                            <TextBlock Text="Danh sách ứng viên" FontSize="18" FontWeight="SemiBold"/>
+                            <Grid Margin="0,18,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Style="{StaticResource PreviewTableHeader}"><TextBlock Text="Họ tên" Foreground="White"/></Border>
+                                <Border Grid.Column="1" Style="{StaticResource PreviewTableHeader}"><TextBlock Text="Vị trí" Foreground="White"/></Border>
+                                <Border Grid.Column="2" Style="{StaticResource PreviewTableHeader}"><TextBlock Text="Giai đoạn" Foreground="White"/></Border>
+                                <Border Grid.Column="3" Style="{StaticResource PreviewTableHeader}"><TextBlock Text="Trạng thái" Foreground="White"/></Border>
+                            </Grid>
+                            <TextBlock Text="Ứng viên 1    | Nhân sự       | Phỏng vấn    | Đang xử lý" Margin="8,18,0,0"/>
+                            <TextBlock Text="Ứng viên 2    | Kế toán       | Đạt           | Có thể tiếp nhận" Margin="8,18,0,0"/>
+                            <TextBlock Text="Ứng viên 3    | Kỹ thuật      | Sàng lọc      | Đang xử lý" Margin="8,18,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource PreviewCard}" Margin="0,92,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Form thao tác" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,18"/>
+                            <TextBlock Text="Họ tên" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Vị trí ứng tuyển" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Giai đoạn" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <Border Style="{StaticResource PreviewButton}"><TextBlock Text="Tiếp nhận thành nhân viên" Style="{StaticResource PreviewButtonText}"/></Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Nhân viên">
+                <Grid Margin="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2.1*"/>
+                        <ColumnDefinition Width="0.9*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.ColumnSpan="2">
+                        <TextBlock Text="Hồ sơ nhân viên" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="DataGrid danh sách bên trái, form chi tiết bên phải; dữ liệu binding với BieuMauNhanVien." Style="{StaticResource PreviewSubTitle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="0" Style="{StaticResource PreviewCard}" Margin="0,92,18,0">
+                        <StackPanel>
+                            <TextBlock Text="Bộ lọc: từ khóa, phòng ban, trạng thái" Foreground="#64748B"/>
+                            <DataGrid Height="390" Margin="0,16,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Mã NV" Width="90"/>
+                                    <DataGridTextColumn Header="Họ tên" Width="190"/>
+                                    <DataGridTextColumn Header="Phòng ban" Width="160"/>
+                                    <DataGridTextColumn Header="Vị trí" Width="180"/>
+                                    <DataGridTextColumn Header="Trạng thái" Width="120"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource PreviewCard}" Margin="0,92,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Form nhân viên" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,18"/>
+                            <TextBlock Text="Mã nhân viên" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Họ tên" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Phòng ban" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Vị trí" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <StackPanel Orientation="Horizontal"><Border Style="{StaticResource PreviewButton}" Width="96"><TextBlock Text="Lưu" Style="{StaticResource PreviewButtonText}"/></Border><Border Height="38" Width="96" Background="#FEE2E2" CornerRadius="7"><TextBlock Text="Xóa" Foreground="#B42318" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Phòng ban">
+                <Grid Margin="24">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="1.5*"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.ColumnSpan="2">
+                        <TextBlock Text="Cơ cấu phòng ban" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Quản lý phòng ban, trưởng phòng và thống kê quân số." Style="{StaticResource PreviewSubTitle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="0" Style="{StaticResource PreviewCard}" Margin="0,92,18,0">
+                        <StackPanel>
+                            <TextBlock Text="Tổng hợp phòng ban" FontSize="18" FontWeight="SemiBold"/>
+                            <DataGrid Height="390" Margin="0,18,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Phòng ban" Width="180"/>
+                                    <DataGridTextColumn Header="Quân số" Width="90"/>
+                                    <DataGridTextColumn Header="Trưởng phòng" Width="200"/>
+                                    <DataGridTextColumn Header="Lương cao nhất" Width="160"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource PreviewCard}" Margin="0,92,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Thông tin phòng ban" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,18"/>
+                            <TextBlock Text="Tên phòng ban" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Trưởng phòng" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <Border Style="{StaticResource PreviewButton}"><TextBlock Text="Lưu phòng ban" Style="{StaticResource PreviewButtonText}"/></Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Chấm công">
+                <Grid Margin="24">
+                    <StackPanel>
+                        <TextBlock Text="Chấm công" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Thiết kế cho vào ca, ra ca, điều chỉnh công và lọc dữ liệu theo ngày/phòng ban/trạng thái." Style="{StaticResource PreviewSubTitle}"/>
+                        <UniformGrid Columns="4">
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Bản ghi"/><TextBlock Text="42" FontSize="30" FontWeight="Bold"/></StackPanel></Border>
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Tổng giờ"/><TextBlock Text="336" FontSize="30" FontWeight="Bold" Foreground="#0F766E"/></StackPanel></Border>
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Ngày công"/><TextBlock Text="42" FontSize="30" FontWeight="Bold" Foreground="#2563EB"/></StackPanel></Border>
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Đủ công"/><TextBlock Text="38" FontSize="30" FontWeight="Bold" Foreground="#B45309"/></StackPanel></Border>
+                        </UniformGrid>
+                        <Border Style="{StaticResource PreviewCard}">
+                            <StackPanel>
+                                <TextBlock Text="DataGrid chấm công: Ngày - Nhân viên - Ca - Số giờ - Trạng thái" FontSize="18" FontWeight="SemiBold"/>
+                                <DataGrid Height="330" Margin="0,18,0,0">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Ngày" Width="120"/>
+                                        <DataGridTextColumn Header="Nhân viên" Width="220"/>
+                                        <DataGridTextColumn Header="Ca" Width="120"/>
+                                        <DataGridTextColumn Header="Số giờ" Width="90"/>
+                                        <DataGridTextColumn Header="Trạng thái" Width="140"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Nghỉ phép">
+                <Grid Margin="24">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="0.9*"/><ColumnDefinition Width="1.6*"/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.ColumnSpan="2">
+                        <TextBlock Text="Nghỉ phép" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Tạo đơn nghỉ và xử lý duyệt/từ chối theo quyền." Style="{StaticResource PreviewSubTitle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="0" Style="{StaticResource PreviewCard}" Margin="0,92,18,0">
+                        <StackPanel>
+                            <TextBlock Text="Form tạo đơn" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,18"/>
+                            <TextBlock Text="Nhân viên" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Loại nghỉ" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Từ ngày" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Đến ngày" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <Border Style="{StaticResource PreviewButton}"><TextBlock Text="Gửi đơn nghỉ" Style="{StaticResource PreviewButtonText}"/></Border>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource PreviewCard}" Margin="0,92,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Danh sách đơn nghỉ" FontSize="18" FontWeight="SemiBold"/>
+                            <DataGrid Height="390" Margin="0,18,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Nhân viên" Width="220"/>
+                                    <DataGridTextColumn Header="Loại nghỉ" Width="160"/>
+                                    <DataGridTextColumn Header="Từ ngày" Width="120"/>
+                                    <DataGridTextColumn Header="Đến ngày" Width="120"/>
+                                    <DataGridTextColumn Header="Trạng thái" Width="130"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Đánh giá">
+                <Grid Margin="24">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="1.4*"/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.ColumnSpan="2">
+                        <TextBlock Text="Đánh giá năng lực" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Ghi nhận điểm, nhận xét và chốt kết quả đánh giá." Style="{StaticResource PreviewSubTitle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="0" Style="{StaticResource PreviewCard}" Margin="0,92,18,0">
+                        <StackPanel>
+                            <TextBlock Text="Form đánh giá" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,18"/>
+                            <TextBlock Text="Nhân viên" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Người đánh giá" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Kỳ đánh giá" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Điểm" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <Border Style="{StaticResource PreviewButton}"><TextBlock Text="Lưu đánh giá" Style="{StaticResource PreviewButtonText}"/></Border>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource PreviewCard}" Margin="0,92,0,0">
+                        <StackPanel>
+                            <TextBlock Text="DataGrid đánh giá" FontSize="18" FontWeight="SemiBold"/>
+                            <DataGrid Height="390" Margin="0,18,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Nhân viên" Width="180"/>
+                                    <DataGridTextColumn Header="Người đánh giá" Width="180"/>
+                                    <DataGridTextColumn Header="Kỳ" Width="100"/>
+                                    <DataGridTextColumn Header="Điểm" Width="80"/>
+                                    <DataGridTextColumn Header="Trạng thái" Width="120"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Bảng lương">
+                <Grid Margin="24">
+                    <StackPanel>
+                        <TextBlock Text="Bảng lương" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Tính lương, xem phiếu, xác nhận trả lương và xuất báo cáo." Style="{StaticResource PreviewSubTitle}"/>
+                        <UniformGrid Columns="3">
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Phiếu lương"/><TextBlock Text="26" FontSize="30" FontWeight="Bold"/></StackPanel></Border>
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Chờ trả"/><TextBlock Text="8" FontSize="30" FontWeight="Bold" Foreground="#B45309"/></StackPanel></Border>
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Lương cao nhất"/><TextBlock Text="28.000.000 đ" FontSize="24" FontWeight="Bold" Foreground="#2563EB"/></StackPanel></Border>
+                        </UniformGrid>
+                        <Border Style="{StaticResource PreviewCard}">
+                            <DataGrid Height="380">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Nhân viên" Width="220"/>
+                                    <DataGridTextColumn Header="Kỳ lương" Width="120"/>
+                                    <DataGridTextColumn Header="Lương cơ bản" Width="150"/>
+                                    <DataGridTextColumn Header="Phụ cấp" Width="130"/>
+                                    <DataGridTextColumn Header="Khấu trừ" Width="130"/>
+                                    <DataGridTextColumn Header="Thực lãnh" Width="150"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Báo cáo">
+                <Grid Margin="24">
+                    <StackPanel>
+                        <TextBlock Text="Báo cáo nhân sự" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Màn hình tập trung xuất các báo cáo hồ sơ, chấm công, nghỉ phép và bảng lương." Style="{StaticResource PreviewSubTitle}"/>
+                        <UniformGrid Columns="2">
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Báo cáo hồ sơ nhân viên" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Lọc theo phòng ban và xuất danh sách hồ sơ." Foreground="#64748B" Margin="0,8,0,16"/><Border Style="{StaticResource PreviewButton}" Width="180"><TextBlock Text="Xuất hồ sơ" Style="{StaticResource PreviewButtonText}"/></Border></StackPanel></Border>
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Báo cáo chấm công" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Tổng hợp lượt chấm công, giờ làm và ngày công." Foreground="#64748B" Margin="0,8,0,16"/><Border Style="{StaticResource PreviewButton}" Width="180"><TextBlock Text="Xuất chấm công" Style="{StaticResource PreviewButtonText}"/></Border></StackPanel></Border>
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Báo cáo nghỉ phép" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Tổng hợp đơn nghỉ theo kỳ và trạng thái." Foreground="#64748B" Margin="0,8,0,16"/><Border Style="{StaticResource PreviewButton}" Width="180"><TextBlock Text="Xuất nghỉ phép" Style="{StaticResource PreviewButtonText}"/></Border></StackPanel></Border>
+                            <Border Style="{StaticResource PreviewCard}"><StackPanel><TextBlock Text="Báo cáo lương" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Tổng hợp lương cơ bản, phụ cấp, khấu trừ và thực lãnh." Foreground="#64748B" Margin="0,8,0,16"/><Border Style="{StaticResource PreviewButton}" Width="180"><TextBlock Text="Xuất lương" Style="{StaticResource PreviewButtonText}"/></Border></StackPanel></Border>
+                        </UniformGrid>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Tài khoản">
+                <Grid Margin="24">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="1.6*"/><ColumnDefinition Width="0.9*"/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.ColumnSpan="2">
+                        <TextBlock Text="Cài đặt tài khoản" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Đồng bộ tài khoản nhân sự, khóa/mở tài khoản, đặt lại mật khẩu và sao lưu phục hồi." Style="{StaticResource PreviewSubTitle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="0" Style="{StaticResource PreviewCard}" Margin="0,92,18,0">
+                        <DataGrid Height="430">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Tài khoản" Width="150"/>
+                                <DataGridTextColumn Header="Họ tên" Width="220"/>
+                                <DataGridTextColumn Header="Vai trò" Width="150"/>
+                                <DataGridTextColumn Header="Trạng thái" Width="140"/>
+                                <DataGridTextColumn Header="Đăng nhập gần nhất" Width="180"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource PreviewCard}" Margin="0,92,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Thao tác quản trị" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,18"/>
+                            <Border Style="{StaticResource PreviewButton}"><TextBlock Text="Đồng bộ tài khoản" Style="{StaticResource PreviewButtonText}"/></Border>
+                            <Border Style="{StaticResource PreviewButton}" Background="#EFF6FF" Margin="0,12,8,0"><TextBlock Text="Khóa / mở tài khoản" Foreground="#2563EB" FontWeight="SemiBold" HorizontalAlignment="Center"/></Border>
+                            <Border Style="{StaticResource PreviewButton}" Background="#EFF6FF" Margin="0,12,8,0"><TextBlock Text="Đặt lại mật khẩu" Foreground="#2563EB" FontWeight="SemiBold" HorizontalAlignment="Center"/></Border>
+                            <Border Style="{StaticResource PreviewButton}" Background="#F8FAFC" Margin="0,28,8,0"><TextBlock Text="Sao lưu dữ liệu" Foreground="#334155" FontWeight="SemiBold" HorizontalAlignment="Center"/></Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Thông báo">
+                <Grid Margin="24">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="0.9*"/><ColumnDefinition Width="1.5*"/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.ColumnSpan="2">
+                        <TextBlock Text="Thông báo nội bộ" Style="{StaticResource PreviewTitle}"/>
+                        <TextBlock Text="Tạo thông báo theo phân hệ, chọn mức độ, đính kèm tệp và lọc thông báo chưa đọc." Style="{StaticResource PreviewSubTitle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="0" Style="{StaticResource PreviewCard}" Margin="0,92,18,0">
+                        <StackPanel>
+                            <TextBlock Text="Form tạo thông báo" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,18"/>
+                            <TextBlock Text="Tiêu đề" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Phân hệ" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Mức độ" Style="{StaticResource PreviewLabel}"/><Border Style="{StaticResource PreviewInput}"/>
+                            <TextBlock Text="Nội dung" Style="{StaticResource PreviewLabel}"/><Border Height="110" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Margin="0,0,0,12"/>
+                            <Border Style="{StaticResource PreviewButton}"><TextBlock Text="Gửi thông báo" Style="{StaticResource PreviewButtonText}"/></Border>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource PreviewCard}" Margin="0,92,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Danh sách thông báo" FontSize="18" FontWeight="SemiBold"/>
+                            <TextBlock Text="Tìm kiếm, chỉ hiện chưa đọc, đánh dấu đã đọc, mở tệp đính kèm." Foreground="#64748B" Margin="0,8,0,18"/>
+                            <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12"><TextBlock Text="Khẩn cấp - Chấm công: Nhắc xác nhận ca làm hôm nay"/></Border>
+                            <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12"><TextBlock Text="Thông tin - Nhân viên: Cập nhật hồ sơ cá nhân"/></Border>
+                            <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="16"><TextBlock Text="Thành công - Báo cáo: Báo cáo lương đã xuất"/></Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
