@@ -39,15 +39,124 @@ public class KhoDuLieuNhanSu
     {
         await using var ketNoi = new SqlConnection(chuoiKetNoi);
         await ketNoi.OpenAsync();
-        var cauLenh = nhanVien.MaNhanVien == 0
-            ? "INSERT INTO HR_Employees(EmployeeCode, FullName, DepartmentID, PositionID, BirthDate, SocialInsuranceStartDate, JoinDate, IsActive, EmergencyContact, BankAccount, IdentityNumber) VALUES(@MaSo,@HoTen,@MaPhongBan,@MaViTri,@NgaySinh,@NgayThamGiaBaoHiemXaHoi,@NgayVaoLam,@DangLamViec,@LienHeKhanCap,@TaiKhoanNganHang,@SoCanCuoc)"
-            : "UPDATE HR_Employees SET EmployeeCode=@MaSo, FullName=@HoTen, DepartmentID=@MaPhongBan, PositionID=@MaViTri, BirthDate=@NgaySinh, SocialInsuranceStartDate=@NgayThamGiaBaoHiemXaHoi, JoinDate=@NgayVaoLam, IsActive=@DangLamViec, EmergencyContact=@LienHeKhanCap, BankAccount=@TaiKhoanNganHang, IdentityNumber=@SoCanCuoc WHERE EmployeeID=@MaNhanVien";
-        await using var lenh = new SqlCommand(cauLenh, ketNoi);
-        GanThamSoNhanVien(lenh, nhanVien);
-        await lenh.ExecuteNonQueryAsync();
+        await using (var kiemTraViTri = new SqlCommand("SELECT COUNT(1) FROM HR_JobPositions WHERE PositionID=@MaViTri AND DepartmentID=@MaPhongBan", ketNoi))
+        {
+            kiemTraViTri.Parameters.AddWithValue("@MaViTri", nhanVien.MaViTri);
+            kiemTraViTri.Parameters.AddWithValue("@MaPhongBan", nhanVien.MaPhongBan);
+            var soViTriHopLe = Convert.ToInt32(await kiemTraViTri.ExecuteScalarAsync());
+            if (soViTriHopLe == 0)
+            {
+                throw new InvalidOperationException("Vị trí phải thuộc đúng phòng ban đang chọn.");
+            }
+        }
+
+        var maNhanVienDaLuu = nhanVien.MaNhanVien;
+        if (nhanVien.MaNhanVien == 0)
+        {
+            const string cauLenhThem = """
+                INSERT INTO HR_Employees(EmployeeCode, FullName, DepartmentID, PositionID, BirthDate, SocialInsuranceStartDate, JoinDate, IsActive, EmergencyContact, BankAccount, IdentityNumber)
+                VALUES(@MaSo,@HoTen,@MaPhongBan,@MaViTri,@NgaySinh,@NgayThamGiaBaoHiemXaHoi,@NgayVaoLam,@DangLamViec,@LienHeKhanCap,@TaiKhoanNganHang,@SoCanCuoc);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);
+                """;
+            await using var lenhThem = new SqlCommand(cauLenhThem, ketNoi);
+            GanThamSoNhanVien(lenhThem, nhanVien);
+            maNhanVienDaLuu = Convert.ToInt32(await lenhThem.ExecuteScalarAsync());
+        }
+        else
+        {
+            const string cauLenhSua = """
+                UPDATE HR_Employees
+                SET EmployeeCode=@MaSo, FullName=@HoTen, DepartmentID=@MaPhongBan, PositionID=@MaViTri, BirthDate=@NgaySinh, SocialInsuranceStartDate=@NgayThamGiaBaoHiemXaHoi, JoinDate=@NgayVaoLam, IsActive=@DangLamViec, EmergencyContact=@LienHeKhanCap, BankAccount=@TaiKhoanNganHang, IdentityNumber=@SoCanCuoc
+                WHERE EmployeeID=@MaNhanVien;
+                """;
+            await using var lenhSua = new SqlCommand(cauLenhSua, ketNoi);
+            GanThamSoNhanVien(lenhSua, nhanVien);
+            await lenhSua.ExecuteNonQueryAsync();
+        }
+
+        if (!nhanVien.DangLamViec)
+        {
+            await ChoNhanVienNghiViecAsync(maNhanVienDaLuu);
+            return;
+        }
+
+        await ApDungQuyTacChucVuSauLuuNhanVienAsync(maNhanVienDaLuu, nhanVien.MaPhongBan, nhanVien.MaViTri, nhanVien.DangLamViec);
     }
 
-    public async Task XoaNhanVienAsync(int maNhanVien)
+    private async Task ApDungQuyTacChucVuSauLuuNhanVienAsync(int maNhanVien, int maPhongBan, int maViTri, bool dangLamViec)
+    {
+        if (dangLamViec)
+        {
+            var laTruongPhong = Convert.ToInt32(await ThucThiScalarTrenChuoiKetNoiAsync(
+                """
+                SELECT CASE WHEN EXISTS (
+                    SELECT 1
+                    FROM HR_JobPositions
+                    WHERE PositionID=@MaViTri
+                      AND DepartmentID=@MaPhongBan
+                      AND Name LIKE N'%Trưởng phòng%'
+                ) THEN 1 ELSE 0 END
+                """,
+                ("@MaViTri", maViTri),
+                ("@MaPhongBan", maPhongBan)) ?? 0) == 1;
+
+            if (laTruongPhong)
+            {
+                await GanTruongPhongAsync(maPhongBan, maNhanVien);
+                return;
+            }
+        }
+
+        await GoVaiTroTruongPhongAsync(maNhanVien);
+        await CapNhatQuanLyNhanVienThuongAsync(maNhanVien, maPhongBan, dangLamViec);
+    }
+
+    private async Task GoVaiTroTruongPhongAsync(int maNhanVien)
+    {
+        await ThucThiAsync(
+            """
+            DECLARE @GiamDoc INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
+
+            UPDATE HR_Departments
+            SET ManagerID = NULL
+            WHERE ManagerID = @MaNhanVien;
+
+            UPDATE HR_Employees
+            SET ManagerID =
+                CASE
+                    WHEN @GiamDoc IS NULL OR EmployeeID = @GiamDoc THEN NULL
+                    ELSE @GiamDoc
+                END
+            WHERE ManagerID = @MaNhanVien;
+            """,
+            ("@MaNhanVien", maNhanVien));
+
+        await DongBoTaiKhoanTheoChucVuNhanSuAsync();
+    }
+
+    private async Task CapNhatQuanLyNhanVienThuongAsync(int maNhanVien, int maPhongBan, bool dangLamViec)
+    {
+        await ThucThiAsync(
+            """
+            DECLARE @GiamDoc INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
+            DECLARE @TruongPhong INT = (SELECT ManagerID FROM HR_Departments WHERE DepartmentID = @MaPhongBan);
+
+            UPDATE HR_Employees
+            SET ManagerID =
+                CASE
+                    WHEN @DangLamViec = 0 OR EmployeeID = @GiamDoc THEN NULL
+                    WHEN @TruongPhong IS NOT NULL AND @TruongPhong <> @MaNhanVien THEN @TruongPhong
+                    WHEN @GiamDoc IS NOT NULL AND @GiamDoc <> @MaNhanVien THEN @GiamDoc
+                    ELSE NULL
+                END
+            WHERE EmployeeID = @MaNhanVien;
+            """,
+            ("@MaNhanVien", maNhanVien),
+            ("@MaPhongBan", maPhongBan),
+            ("@DangLamViec", dangLamViec ? 1 : 0));
+    }
+
+    public async Task ChoNhanVienNghiViecAsync(int maNhanVien)
     {
         await using var ketNoi = new SqlConnection(chuoiKetNoi);
         await ketNoi.OpenAsync();
@@ -55,24 +164,53 @@ public class KhoDuLieuNhanSu
 
         try
         {
-            string[] cacLenh =
-            [
-                "UPDATE HR_Departments SET ManagerID = NULL WHERE ManagerID = @MaNhanVien",
-                "UPDATE HR_Employees SET ManagerID = NULL WHERE ManagerID = @MaNhanVien",
-                "DELETE FROM HR_Payslips WHERE EmployeeID = @MaNhanVien",
-                "DELETE FROM HR_Appraisals WHERE EmployeeID = @MaNhanVien OR ReviewerID = @MaNhanVien",
-                "DELETE FROM HR_LeaveRequests WHERE EmployeeID = @MaNhanVien OR ApproverID = @MaNhanVien",
-                "DELETE FROM HR_Attendances WHERE EmployeeID = @MaNhanVien",
-                "DELETE FROM HR_Contracts WHERE EmployeeID = @MaNhanVien",
-                "DELETE FROM HR_Employees WHERE EmployeeID = @MaNhanVien"
-            ];
+            await using var lenh = new SqlCommand("""
+                DECLARE @GiamDoc INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
+                DECLARE @MaSo VARCHAR(20);
+                DECLARE @HoTen NVARCHAR(150);
 
-            foreach (var cauLenh in cacLenh)
-            {
-                await using var lenh = new SqlCommand(cauLenh, ketNoi, giaoDich);
-                lenh.Parameters.AddWithValue("@MaNhanVien", maNhanVien);
-                await lenh.ExecuteNonQueryAsync();
-            }
+                SELECT @MaSo = EmployeeCode, @HoTen = FullName
+                FROM HR_Employees
+                WHERE EmployeeID = @MaNhanVien;
+
+                IF @MaSo IS NULL
+                BEGIN
+                    THROW 50007, N'Không tìm thấy hồ sơ nhân viên cần cho nghỉ việc.', 1;
+                END;
+
+                UPDATE HR_Attendances
+                SET CheckOutTime = GETDATE(),
+                    WorkHours = CAST(DATEDIFF(MINUTE, CheckInTime, GETDATE()) AS DECIMAL(10,2)) / 60
+                WHERE EmployeeID = @MaNhanVien
+                  AND CheckOutTime IS NULL;
+
+                UPDATE HR_Departments
+                SET ManagerID = NULL
+                WHERE ManagerID = @MaNhanVien;
+
+                UPDATE HR_Employees
+                SET ManagerID =
+                    CASE
+                        WHEN @GiamDoc IS NULL OR EmployeeID = @GiamDoc THEN NULL
+                        ELSE @GiamDoc
+                    END
+                WHERE ManagerID = @MaNhanVien;
+
+                UPDATE HR_Employees
+                SET IsActive = 0,
+                    ManagerID = NULL
+                WHERE EmployeeID = @MaNhanVien;
+
+                IF OBJECT_ID(N'dbo.HR_Users', N'U') IS NOT NULL
+                BEGIN
+                    UPDATE dbo.HR_Users
+                    SET IsActive = 0
+                    WHERE Username = LOWER(@MaSo)
+                       OR LTRIM(RTRIM(FullName)) = LTRIM(RTRIM(@HoTen));
+                END;
+                """, ketNoi, giaoDich);
+            lenh.Parameters.AddWithValue("@MaNhanVien", maNhanVien);
+            await lenh.ExecuteNonQueryAsync();
 
             await giaoDich.CommitAsync();
         }
@@ -81,9 +219,13 @@ public class KhoDuLieuNhanSu
             await giaoDich.RollbackAsync();
             throw;
         }
+
+        await DongBoTaiKhoanTheoChucVuNhanSuAsync();
     }
 
-    public async Task ThemUngVienAsync(BieuMauUngVien ungVien)
+    public Task XoaNhanVienAsync(int maNhanVien) => ChoNhanVienNghiViecAsync(maNhanVien);
+
+    public async Task LuuUngVienAsync(BieuMauUngVien ungVien)
     {
         await ThucThiAsync("""
             IF EXISTS (SELECT 1 FROM HR_Employees WHERE LTRIM(RTRIM(FullName)) = LTRIM(RTRIM(@HoTen)) AND IsActive = 1)
@@ -91,14 +233,36 @@ public class KhoDuLieuNhanSu
                 THROW 50006, N'Người này đã là nhân viên, không đưa vào danh sách ứng viên.', 1;
             END;
 
-            INSERT INTO HR_Applicants(PositionID, FullName, Email, Phone, CVFile_Url, Stage)
-            VALUES(@MaViTri, @HoTen, @Email, @DienThoai, NULL, N'Mới')
+            IF @MaUngVien > 0
+            BEGIN
+                UPDATE HR_Applicants
+                SET PositionID = @MaViTri,
+                    FullName = @HoTen,
+                    Email = @Email,
+                    Phone = @DienThoai,
+                    Stage = @GiaiDoan
+                WHERE ApplicantID = @MaUngVien;
+
+                IF @@ROWCOUNT = 0
+                BEGIN
+                    THROW 50011, N'Không tìm thấy ứng viên cần cập nhật.', 1;
+                END;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO HR_Applicants(PositionID, FullName, Email, Phone, CVFile_Url, Stage)
+                VALUES(@MaViTri, @HoTen, @Email, @DienThoai, NULL, @GiaiDoan);
+            END;
             """,
+            ("@MaUngVien", ungVien.MaUngVien),
             ("@MaViTri", ungVien.MaViTri),
             ("@HoTen", ungVien.HoTen),
             ("@Email", ungVien.Email),
-            ("@DienThoai", ungVien.DienThoai));
+            ("@DienThoai", ungVien.DienThoai),
+            ("@GiaiDoan", string.IsNullOrWhiteSpace(ungVien.GiaiDoan) ? "Mới" : ungVien.GiaiDoan));
     }
+
+    public Task ThemUngVienAsync(BieuMauUngVien ungVien) => LuuUngVienAsync(ungVien);
 
     public async Task ChuyenUngVienThanhNhanVienAsync(UngVien ungVien)
     {
@@ -112,7 +276,8 @@ public class KhoDuLieuNhanSu
                 DECLARE @ApplicantID INT = (
                     SELECT TOP 1 ApplicantID
                     FROM HR_Applicants
-                    WHERE FullName = @HoTen AND Email = @Email
+                    WHERE (@MaUngVien > 0 AND ApplicantID = @MaUngVien)
+                       OR (@MaUngVien = 0 AND FullName = @HoTen AND Email = @Email)
                     ORDER BY ApplicantID DESC
                 );
                 DECLARE @PositionID INT = ISNULL((SELECT PositionID FROM HR_Applicants WHERE ApplicantID = @ApplicantID), 1);
@@ -142,8 +307,9 @@ public class KhoDuLieuNhanSu
                     VALUES(@NextCode, NULL, @HoTen, @DepartmentID, @PositionID, NULL, DATEADD(YEAR, -23, CAST(GETDATE() AS DATE)), CAST(GETDATE() AS DATE), CAST(GETDATE() AS DATE), 1);
                     DELETE FROM HR_Applicants WHERE ApplicantID = @ApplicantID;
                 END
-                """;
+            """;
             await using var lenh = new SqlCommand(sql, ketNoi, giaoDich);
+            lenh.Parameters.AddWithValue("@MaUngVien", ungVien.MaUngVien);
             lenh.Parameters.AddWithValue("@HoTen", ungVien.HoTen);
             lenh.Parameters.AddWithValue("@Email", ungVien.Email);
             await lenh.ExecuteNonQueryAsync();
@@ -165,55 +331,73 @@ public class KhoDuLieuNhanSu
 
     public async Task LuuPhongBanAsync(BieuMauPhongBan phongBan)
     {
+        var tenPhongBan = phongBan.TenPhongBan.Trim();
+        var maPhongBan = phongBan.MaPhongBan;
+
         if (phongBan.MaPhongBan == 0)
+        {
+            var maPhongBanMoi = await ThucThiScalarTrenChuoiKetNoiAsync(
+                """
+                INSERT INTO HR_Departments(Name, ManagerID) VALUES(@TenPhongBan, NULL);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);
+                """,
+                ("@TenPhongBan", tenPhongBan));
+            maPhongBan = Convert.ToInt32(maPhongBanMoi);
+        }
+        else
         {
             await ThucThiAsync(
                 """
-                INSERT INTO HR_Departments(Name, ManagerID) VALUES(@TenPhongBan, @MaTruongPhong);
-                DECLARE @MaPhongBanMoi INT = CAST(SCOPE_IDENTITY() AS INT);
-                IF @MaTruongPhong IS NOT NULL
+                UPDATE HR_Departments SET Name=@TenPhongBan WHERE DepartmentID=@MaPhongBan;
+                IF @MaTruongPhong IS NULL
                 BEGIN
-                    UPDATE HR_Employees SET DepartmentID = @MaPhongBanMoi WHERE EmployeeID = @MaTruongPhong;
-                    DECLARE @GiamDocMoi INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
-                    UPDATE e
-                    SET ManagerID =
-                        CASE
-                            WHEN e.EmployeeID = @MaTruongPhong THEN
-                                CASE WHEN e.EmployeeID = @GiamDocMoi THEN NULL ELSE @GiamDocMoi END
-                            ELSE @MaTruongPhong
-                        END
-                    FROM HR_Employees e
-                    WHERE e.DepartmentID = @MaPhongBanMoi
-                      AND e.IsActive = 1;
+                    DECLARE @TruongPhongCu INT = (SELECT ManagerID FROM HR_Departments WHERE DepartmentID = @MaPhongBan);
+                    DECLARE @TenDonVi NVARCHAR(150) = CASE WHEN @TenPhongBan LIKE N'Phòng %' THEN LTRIM(RTRIM(SUBSTRING(@TenPhongBan, LEN(N'Phòng ') + 1, 150))) ELSE @TenPhongBan END;
+                    DECLARE @ViTriNhanVien INT = (
+                        SELECT TOP 1 PositionID
+                        FROM HR_JobPositions
+                        WHERE DepartmentID = @MaPhongBan
+                          AND Name NOT LIKE N'%Trưởng phòng%'
+                        ORDER BY
+                            CASE
+                                WHEN Name LIKE N'%Nhân viên%' THEN 0
+                                WHEN Name LIKE N'%Chuyên viên%' THEN 1
+                                ELSE 2
+                            END,
+                            PositionID
+                    );
+
+                    IF @ViTriNhanVien IS NULL
+                    BEGIN
+                        INSERT INTO HR_JobPositions(DepartmentID, Name, ExpectedSalary, Status)
+                        VALUES(@MaPhongBan, N'Nhân viên ' + @TenDonVi, 0, N'Đang tuyển');
+                        SET @ViTriNhanVien = CAST(SCOPE_IDENTITY() AS INT);
+                    END;
+
+                    UPDATE HR_Departments SET ManagerID=NULL WHERE DepartmentID=@MaPhongBan;
+
+                    IF @TruongPhongCu IS NOT NULL
+                    BEGIN
+                        UPDATE HR_Employees
+                        SET PositionID = @ViTriNhanVien
+                        WHERE EmployeeID = @TruongPhongCu
+                          AND IsActive = 1;
+                    END;
                 END;
                 """,
-                ("@TenPhongBan", phongBan.TenPhongBan.Trim()),
-                ("@MaTruongPhong", phongBan.MaTruongPhong));
-            return;
+                ("@TenPhongBan", tenPhongBan),
+                ("@MaTruongPhong", phongBan.MaTruongPhong),
+                ("@MaPhongBan", maPhongBan));
         }
 
-        await ThucThiAsync(
-            """
-            UPDATE HR_Departments SET Name=@TenPhongBan, ManagerID=@MaTruongPhong WHERE DepartmentID=@MaPhongBan;
-            IF @MaTruongPhong IS NOT NULL
-            BEGIN
-                UPDATE HR_Employees SET DepartmentID = @MaPhongBan WHERE EmployeeID = @MaTruongPhong;
-                DECLARE @GiamDoc INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
-                UPDATE e
-                SET ManagerID =
-                    CASE
-                        WHEN e.EmployeeID = @MaTruongPhong THEN
-                            CASE WHEN e.EmployeeID = @GiamDoc THEN NULL ELSE @GiamDoc END
-                        ELSE @MaTruongPhong
-                    END
-                FROM HR_Employees e
-                WHERE e.DepartmentID = @MaPhongBan
-                  AND e.IsActive = 1;
-            END;
-            """,
-            ("@TenPhongBan", phongBan.TenPhongBan.Trim()),
-            ("@MaTruongPhong", phongBan.MaTruongPhong),
-            ("@MaPhongBan", phongBan.MaPhongBan));
+        if (phongBan.MaTruongPhong.HasValue)
+        {
+            await GanTruongPhongAsync(maPhongBan, phongBan.MaTruongPhong.Value);
+        }
+        else
+        {
+            await DongBoTaiKhoanTheoChucVuNhanSuAsync();
+        }
     }
 
     public async Task XoaPhongBanAsync(int maPhongBan)
@@ -234,10 +418,70 @@ public class KhoDuLieuNhanSu
     {
         await ThucThiAsync(
             """
-            UPDATE HR_Employees SET DepartmentID = @MaPhongBan WHERE EmployeeID = @MaNhanVien;
+            IF NOT EXISTS (SELECT 1 FROM HR_Employees WHERE EmployeeID = @MaNhanVien AND IsActive = 1)
+            BEGIN
+                THROW 50008, N'Không thể bổ nhiệm nhân viên đã nghỉ việc làm trưởng phòng.', 1;
+            END;
+
+            DECLARE @TruongPhongCu INT = (SELECT ManagerID FROM HR_Departments WHERE DepartmentID = @MaPhongBan);
+            DECLARE @TenPhongBan NVARCHAR(150) = (SELECT Name FROM HR_Departments WHERE DepartmentID = @MaPhongBan);
+            DECLARE @GiamDoc INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
+            DECLARE @TenDonVi NVARCHAR(150) = CASE WHEN @TenPhongBan LIKE N'Phòng %' THEN LTRIM(RTRIM(SUBSTRING(@TenPhongBan, LEN(N'Phòng ') + 1, 150))) ELSE @TenPhongBan END;
+            DECLARE @ViTriTruongPhong INT = (
+                SELECT TOP 1 PositionID
+                FROM HR_JobPositions
+                WHERE DepartmentID = @MaPhongBan
+                  AND Name LIKE N'%Trưởng phòng%'
+                ORDER BY PositionID
+            );
+            DECLARE @ViTriNhanVien INT = (
+                SELECT TOP 1 PositionID
+                FROM HR_JobPositions
+                WHERE DepartmentID = @MaPhongBan
+                  AND Name NOT LIKE N'%Trưởng phòng%'
+                ORDER BY
+                    CASE
+                        WHEN Name LIKE N'%Nhân viên%' THEN 0
+                        WHEN Name LIKE N'%Chuyên viên%' THEN 1
+                        ELSE 2
+                    END,
+                    PositionID
+            );
+
+            IF @ViTriTruongPhong IS NULL
+            BEGIN
+                INSERT INTO HR_JobPositions(DepartmentID, Name, ExpectedSalary, Status)
+                VALUES(@MaPhongBan, N'Trưởng phòng ' + @TenDonVi, 0, N'Đang tuyển');
+                SET @ViTriTruongPhong = CAST(SCOPE_IDENTITY() AS INT);
+            END;
+
+            IF @ViTriNhanVien IS NULL
+            BEGIN
+                INSERT INTO HR_JobPositions(DepartmentID, Name, ExpectedSalary, Status)
+                VALUES(@MaPhongBan, N'Nhân viên ' + @TenDonVi, 0, N'Đang tuyển');
+                SET @ViTriNhanVien = CAST(SCOPE_IDENTITY() AS INT);
+            END;
+
+            UPDATE HR_Departments
+            SET ManagerID = NULL
+            WHERE ManagerID = @MaNhanVien
+              AND DepartmentID <> @MaPhongBan;
+
+            IF @TruongPhongCu IS NOT NULL AND @TruongPhongCu <> @MaNhanVien
+            BEGIN
+                UPDATE HR_Employees
+                SET DepartmentID = @MaPhongBan,
+                    PositionID = @ViTriNhanVien
+                WHERE EmployeeID = @TruongPhongCu;
+            END;
+
+            UPDATE HR_Employees
+            SET DepartmentID = @MaPhongBan,
+                PositionID = @ViTriTruongPhong
+            WHERE EmployeeID = @MaNhanVien;
+
             UPDATE HR_Departments SET ManagerID = @MaNhanVien WHERE DepartmentID = @MaPhongBan;
 
-            DECLARE @GiamDoc INT = (SELECT TOP 1 EmployeeID FROM HR_Employees WHERE EmployeeCode = 'GD001');
             UPDATE e
             SET ManagerID =
                 CASE
@@ -251,6 +495,8 @@ public class KhoDuLieuNhanSu
             """,
             ("@MaNhanVien", maNhanVien),
             ("@MaPhongBan", maPhongBan));
+
+        await DongBoTaiKhoanTheoChucVuNhanSuAsync();
     }
 
     public async Task ChuyenGiaiDoanUngVienAsync(UngVien ungVien, string giaiDoanMoi)
@@ -261,10 +507,12 @@ public class KhoDuLieuNhanSu
             WHERE ApplicantID = (
                 SELECT TOP 1 ApplicantID
                 FROM HR_Applicants
-                WHERE FullName = @HoTen AND Email = @Email
+                WHERE (@MaUngVien > 0 AND ApplicantID = @MaUngVien)
+                   OR (@MaUngVien = 0 AND FullName = @HoTen AND Email = @Email)
                 ORDER BY ApplicantID DESC
             )
             """,
+            ("@MaUngVien", ungVien.MaUngVien),
             ("@GiaiDoanMoi", giaiDoanMoi),
             ("@HoTen", ungVien.HoTen),
             ("@Email", ungVien.Email));
@@ -273,6 +521,11 @@ public class KhoDuLieuNhanSu
     public async Task GhiNhanVaoCaAsync(int maNhanVien)
     {
         await ThucThiAsync("""
+            IF NOT EXISTS (SELECT 1 FROM HR_Employees WHERE EmployeeID = @MaNhanVien AND IsActive = 1)
+            BEGIN
+                THROW 50009, N'Nhân viên đã nghỉ việc không thể vào ca mới.', 1;
+            END;
+
             IF EXISTS (SELECT 1 FROM HR_Attendances WHERE EmployeeID = @MaNhanVien AND CheckOutTime IS NULL)
             BEGIN
                 THROW 50002, N'Nhân viên đang có ca chưa ra. Vui lòng ghi nhận ra ca trước khi vào ca mới.', 1;
@@ -338,8 +591,13 @@ public class KhoDuLieuNhanSu
         }
 
         await ThucThiAsync("""
-            INSERT INTO HR_LeaveRequests(EmployeeID, LeaveType, StartDate, EndDate, TotalDays, Status, ApproverID, Reason)
-            VALUES(@MaNhanVien, @LoaiNghi, @TuNgay, @DenNgay, @TongNgay, N'Chờ duyệt', NULL, @LyDo)
+            IF NOT EXISTS (SELECT 1 FROM HR_Employees WHERE EmployeeID = @MaNhanVien AND IsActive = 1)
+            BEGIN
+                THROW 50010, N'Nhân viên đã nghỉ việc không thể tạo đơn nghỉ mới.', 1;
+            END;
+
+            INSERT INTO HR_LeaveRequests(EmployeeID, LeaveType, StartDate, EndDate, TotalDays, Status, ApproverID, Reason, ApprovalNote)
+            VALUES(@MaNhanVien, @LoaiNghi, @TuNgay, @DenNgay, @TongNgay, N'Chờ duyệt', NULL, @LyDo, NULL)
             """,
             ("@MaNhanVien", nghiPhep.MaNhanVien),
             ("@LoaiNghi", nghiPhep.LoaiNghi),
@@ -353,7 +611,8 @@ public class KhoDuLieuNhanSu
     {
         await ThucThiAsync("""
             UPDATE HR_LeaveRequests
-            SET Status = @TrangThai
+            SET Status = @TrangThai,
+                ApprovalNote = NULLIF(@LyDoXuLy, N'')
             WHERE LeaveID = (
                 SELECT TOP 1 l.LeaveID
                 FROM HR_LeaveRequests l
@@ -366,7 +625,8 @@ public class KhoDuLieuNhanSu
             ("@NhanVien", nghiPhep.NhanVien),
             ("@LoaiNghi", nghiPhep.LoaiNghi),
             ("@TuNgay", nghiPhep.TuNgay.Date),
-            ("@DenNgay", nghiPhep.DenNgay.Date));
+            ("@DenNgay", nghiPhep.DenNgay.Date),
+            ("@LyDoXuLy", nghiPhep.LyDoXuLy.Trim()));
     }
 
     public async Task TaoDanhGiaAsync(int maNhanVien)
@@ -641,7 +901,13 @@ public class KhoDuLieuNhanSu
         await ketNoi.OpenAsync();
         await SoDoQuanTriSql.DamBaoAsync(ketNoi);
 
-        await using var lenh = new SqlCommand("UPDATE dbo.HR_Users SET IsActive=@IsActive WHERE Username=@Username", ketNoi);
+        await using var lenh = new SqlCommand("""
+            UPDATE dbo.HR_Users
+            SET IsActive=@IsActive,
+                FailedLoginCount = CASE WHEN @IsActive = 1 THEN 0 ELSE FailedLoginCount END,
+                LockoutUntilAt = CASE WHEN @IsActive = 1 THEN NULL ELSE LockoutUntilAt END
+            WHERE Username=@Username
+            """, ketNoi);
         lenh.Parameters.AddWithValue("@IsActive", kichHoat);
         lenh.Parameters.AddWithValue("@Username", tenDangNhap);
         await lenh.ExecuteNonQueryAsync();
@@ -662,7 +928,8 @@ public class KhoDuLieuNhanSu
                 PasswordSalt=@PasswordSalt,
                 PasswordIterations=@PasswordIterations,
                 RequirePasswordChange=1,
-                FailedLoginCount=0
+                FailedLoginCount=0,
+                LockoutUntilAt=NULL
             WHERE Username=@Username
             """, ketNoi);
         lenh.Parameters.AddWithValue("@PasswordHash", matKhau.HashBase64);
@@ -713,6 +980,27 @@ public class KhoDuLieuNhanSu
         await lenh.ExecuteNonQueryAsync();
     }
 
+    private async Task<object?> ThucThiScalarTrenChuoiKetNoiAsync(string sql, params (string Ten, object? GiaTri)[] thamSo)
+    {
+        await using var ketNoi = new SqlConnection(chuoiKetNoi);
+        await ketNoi.OpenAsync();
+        await using var lenh = new SqlCommand(sql, ketNoi);
+        foreach (var (ten, giaTri) in thamSo)
+        {
+            lenh.Parameters.AddWithValue(ten, giaTri ?? DBNull.Value);
+        }
+
+        return await lenh.ExecuteScalarAsync();
+    }
+
+    private async Task DongBoTaiKhoanTheoChucVuNhanSuAsync()
+    {
+        await using var ketNoi = new SqlConnection(chuoiKetNoi);
+        await ketNoi.OpenAsync();
+        await SoDoQuanTriSql.DamBaoAsync(ketNoi);
+        await TaiKhoanNhanSuSql.DamBaoTheoNhanVienAsync(ketNoi);
+    }
+
     private static async Task DamBaoCoSoDuLieuAsync(string chuoiKetNoi)
     {
         var boTao = new SqlConnectionStringBuilder(chuoiKetNoi);
@@ -738,6 +1026,7 @@ public class KhoDuLieuNhanSu
         await SoDoQuanTriSql.DamBaoAsync(ketNoi);
         await DamBaoDuLieuMacDinhSqlAsync(ketNoi);
         await DamBaoPhanCongTruongPhongHopLeSqlAsync(ketNoi);
+        await DamBaoHoSoNhanVienKhongTrungLapSqlAsync(ketNoi);
         await TaiKhoanNhanSuSql.DamBaoTheoNhanVienAsync(ketNoi);
     }
 
@@ -813,7 +1102,8 @@ public class KhoDuLieuNhanSu
                     TotalDays DECIMAL(10,2) NOT NULL,
                     Status NVARCHAR(60) NOT NULL DEFAULT(N'Chờ duyệt'),
                     ApproverID INT NULL,
-                    Reason NVARCHAR(500) NULL
+                    Reason NVARCHAR(500) NULL,
+                    ApprovalNote NVARCHAR(500) NULL
                 );
             END;
 
@@ -923,6 +1213,8 @@ public class KhoDuLieuNhanSu
                 ALTER TABLE dbo.HR_LeaveRequests ADD ApproverID INT NULL;
             IF COL_LENGTH(N'dbo.HR_LeaveRequests', N'Reason') IS NULL
                 ALTER TABLE dbo.HR_LeaveRequests ADD Reason NVARCHAR(500) NULL;
+            IF COL_LENGTH(N'dbo.HR_LeaveRequests', N'ApprovalNote') IS NULL
+                ALTER TABLE dbo.HR_LeaveRequests ADD ApprovalNote NVARCHAR(500) NULL;
 
             IF COL_LENGTH(N'dbo.HR_Attendances', N'WorkHours') IS NULL
                 ALTER TABLE dbo.HR_Attendances ADD WorkHours DECIMAL(10,2) NULL;
@@ -997,6 +1289,10 @@ public class KhoDuLieuNhanSu
                 WHEN 'Paid' THEN N'Đã trả'
                 ELSE Status
             END;
+
+            UPDATE dbo.HR_Payslips
+            SET NetSalary = 0
+            WHERE NetSalary < 0;
 
             UPDATE dbo.HR_Contracts
             SET Status = CASE Status
@@ -1079,7 +1375,13 @@ public class KhoDuLieuNhanSu
                 nhanVienIds.TryGetValue(dong.MaSoQuanLy!, out var maQuanLy))
             {
                 await ThucThiTrenKetNoiAsync(ketNoi,
-                    "UPDATE HR_Employees SET ManagerID=@MaQuanLy WHERE EmployeeID=@MaNhanVien",
+                    """
+                    UPDATE HR_Employees
+                    SET ManagerID=@MaQuanLy
+                    WHERE EmployeeID=@MaNhanVien
+                      AND IsActive = 1
+                      AND DepartmentID = (SELECT DepartmentID FROM HR_Employees WHERE EmployeeID=@MaQuanLy)
+                    """,
                     ("@MaQuanLy", maQuanLy),
                     ("@MaNhanVien", maNhanVien));
             }
@@ -1090,7 +1392,12 @@ public class KhoDuLieuNhanSu
             if (nhanVienIds.TryGetValue(phongBan.MaSoTruongPhong, out var maTruongPhong))
             {
                 await ThucThiTrenKetNoiAsync(ketNoi,
-                    "UPDATE HR_Departments SET ManagerID=@MaTruongPhong WHERE DepartmentID=@MaPhongBan",
+                    """
+                    UPDATE HR_Departments
+                    SET ManagerID=@MaTruongPhong
+                    WHERE DepartmentID=@MaPhongBan
+                      AND EXISTS (SELECT 1 FROM HR_Employees WHERE EmployeeID=@MaTruongPhong AND IsActive = 1)
+                    """,
                     ("@MaTruongPhong", maTruongPhong),
                     ("@MaPhongBan", phongBanIds[phongBan.TenPhongBan]));
             }
@@ -1164,7 +1471,9 @@ public class KhoDuLieuNhanSu
                 ON (pc.MaNhanVien IS NOT NULL AND e.EmployeeCode = pc.MaNhanVien)
                 OR (pc.HoTen IS NOT NULL AND LTRIM(RTRIM(e.FullName)) = LTRIM(RTRIM(pc.HoTen)))
             JOIN HR_Departments d ON d.Name = pc.TenPhongBan
-            WHERE e.DepartmentID <> d.DepartmentID;
+            WHERE d.ManagerID IS NULL
+              AND e.IsActive = 1
+              AND e.DepartmentID <> d.DepartmentID;
 
             UPDATE d
             SET ManagerID = COALESCE(uuTien.EmployeeID, nhanSuDauPhong.EmployeeID)
@@ -1174,8 +1483,9 @@ public class KhoDuLieuNhanSu
             (
                 SELECT TOP 1 e.EmployeeID
                 FROM HR_Employees e
-                WHERE (pc.MaNhanVien IS NOT NULL AND e.EmployeeCode = pc.MaNhanVien)
-                   OR (pc.HoTen IS NOT NULL AND LTRIM(RTRIM(e.FullName)) = LTRIM(RTRIM(pc.HoTen)))
+                WHERE ((pc.MaNhanVien IS NOT NULL AND e.EmployeeCode = pc.MaNhanVien)
+                    OR (pc.HoTen IS NOT NULL AND LTRIM(RTRIM(e.FullName)) = LTRIM(RTRIM(pc.HoTen))))
+                  AND e.IsActive = 1
                 ORDER BY CASE WHEN e.DepartmentID = d.DepartmentID THEN 0 ELSE 1 END, e.EmployeeID
             ) uuTien
             OUTER APPLY
@@ -1193,8 +1503,8 @@ public class KhoDuLieuNhanSu
                     ) THEN 0 ELSE 1 END,
                     e.EmployeeID
             ) nhanSuDauPhong
-            WHERE COALESCE(uuTien.EmployeeID, nhanSuDauPhong.EmployeeID) IS NOT NULL
-              AND (d.ManagerID IS NULL OR d.ManagerID <> COALESCE(uuTien.EmployeeID, nhanSuDauPhong.EmployeeID));
+            WHERE d.ManagerID IS NULL
+              AND COALESCE(uuTien.EmployeeID, nhanSuDauPhong.EmployeeID) IS NOT NULL;
 
             UPDATE e
             SET ManagerID =
@@ -1214,6 +1524,185 @@ public class KhoDuLieuNhanSu
                         ELSE d.ManagerID
                     END,
                     -1);
+
+            INSERT INTO HR_JobPositions(DepartmentID, Name, ExpectedSalary, Status)
+            SELECT d.DepartmentID,
+                   N'Trưởng phòng ' + CASE WHEN d.Name LIKE N'Phòng %' THEN LTRIM(RTRIM(SUBSTRING(d.Name, LEN(N'Phòng ') + 1, 150))) ELSE d.Name END,
+                   0,
+                   N'Đang tuyển'
+            FROM HR_Departments d
+            WHERE d.Name LIKE N'Phòng %'
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM HR_JobPositions p
+                    WHERE p.DepartmentID = d.DepartmentID
+                      AND p.Name LIKE N'%Trưởng phòng%'
+              );
+
+            INSERT INTO HR_JobPositions(DepartmentID, Name, ExpectedSalary, Status)
+            SELECT d.DepartmentID,
+                   N'Nhân viên ' + CASE WHEN d.Name LIKE N'Phòng %' THEN LTRIM(RTRIM(SUBSTRING(d.Name, LEN(N'Phòng ') + 1, 150))) ELSE d.Name END,
+                   0,
+                   N'Đang tuyển'
+            FROM HR_Departments d
+            WHERE d.Name LIKE N'Phòng %'
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM HR_JobPositions p
+                    WHERE p.DepartmentID = d.DepartmentID
+                      AND p.Name NOT LIKE N'%Trưởng phòng%'
+              );
+
+            ;WITH ViTriTruongPhong AS
+            (
+                SELECT DepartmentID, PositionID,
+                       ROW_NUMBER() OVER (PARTITION BY DepartmentID ORDER BY PositionID) AS ThuTu
+                FROM HR_JobPositions
+                WHERE Name LIKE N'%Trưởng phòng%'
+            )
+            UPDATE e
+            SET PositionID = vt.PositionID
+            FROM HR_Employees e
+            JOIN HR_Departments d ON d.ManagerID = e.EmployeeID
+            JOIN ViTriTruongPhong vt ON vt.DepartmentID = d.DepartmentID AND vt.ThuTu = 1
+            WHERE d.Name LIKE N'Phòng %'
+              AND e.PositionID <> vt.PositionID;
+
+            ;WITH ViTriNhanVien AS
+            (
+                SELECT DepartmentID, PositionID,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY DepartmentID
+                           ORDER BY
+                               CASE
+                                   WHEN Name LIKE N'%Nhân viên%' THEN 0
+                                   WHEN Name LIKE N'%Chuyên viên%' THEN 1
+                                   ELSE 2
+                               END,
+                               PositionID
+                       ) AS ThuTu
+                FROM HR_JobPositions
+                WHERE Name NOT LIKE N'%Trưởng phòng%'
+            )
+            UPDATE e
+            SET PositionID = vn.PositionID
+            FROM HR_Employees e
+            JOIN HR_Departments d ON d.DepartmentID = e.DepartmentID
+            JOIN HR_JobPositions p ON p.PositionID = e.PositionID
+            JOIN ViTriNhanVien vn ON vn.DepartmentID = e.DepartmentID AND vn.ThuTu = 1
+            WHERE d.Name LIKE N'Phòng %'
+              AND d.ManagerID IS NOT NULL
+              AND e.EmployeeID <> d.ManagerID
+              AND p.Name LIKE N'%Trưởng phòng%';
+            """);
+    }
+
+    private static async Task DamBaoHoSoNhanVienKhongTrungLapSqlAsync(SqlConnection ketNoi)
+    {
+        await ThucThiTrenKetNoiAsync(ketNoi, """
+            DECLARE @HoSoTrung TABLE
+            (
+                MaNhanVienTrung INT NOT NULL PRIMARY KEY,
+                MaNhanVienGiu INT NOT NULL
+            );
+
+            ;WITH XepHang AS
+            (
+                SELECT
+                    e.EmployeeID,
+                    FIRST_VALUE(e.EmployeeID) OVER (
+                        PARTITION BY
+                            LTRIM(RTRIM(e.FullName)),
+                            ISNULL(CONVERT(VARCHAR(10), e.BirthDate, 23), ''),
+                            ISNULL(CONVERT(VARCHAR(10), e.SocialInsuranceStartDate, 23), ''),
+                            ISNULL(CONVERT(VARCHAR(10), e.JoinDate, 23), ''),
+                            e.DepartmentID
+                        ORDER BY
+                            CASE WHEN EXISTS (SELECT 1 FROM HR_Departments d WHERE d.ManagerID = e.EmployeeID) THEN 0 ELSE 1 END,
+                            CASE
+                                WHEN e.EmployeeCode LIKE 'GD%' THEN 0
+                                WHEN e.EmployeeCode LIKE 'TP%' THEN 1
+                                WHEN e.EmployeeCode LIKE 'NV%' THEN 2
+                                ELSE 3
+                            END,
+                            e.EmployeeID
+                    ) AS MaNhanVienGiu
+                FROM HR_Employees e
+                WHERE e.IsActive = 1
+            )
+            INSERT INTO @HoSoTrung(MaNhanVienTrung, MaNhanVienGiu)
+            SELECT EmployeeID, MaNhanVienGiu
+            FROM XepHang
+            WHERE EmployeeID <> MaNhanVienGiu;
+
+            IF EXISTS (SELECT 1 FROM @HoSoTrung)
+            BEGIN
+                UPDATE d
+                SET ManagerID = m.MaNhanVienGiu
+                FROM HR_Departments d
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = d.ManagerID;
+
+                UPDATE e
+                SET ManagerID = m.MaNhanVienGiu
+                FROM HR_Employees e
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = e.ManagerID;
+
+                UPDATE a
+                SET EmployeeID = m.MaNhanVienGiu
+                FROM HR_Attendances a
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = a.EmployeeID;
+
+                UPDATE l
+                SET EmployeeID = m.MaNhanVienGiu
+                FROM HR_LeaveRequests l
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = l.EmployeeID;
+
+                UPDATE l
+                SET ApproverID = m.MaNhanVienGiu
+                FROM HR_LeaveRequests l
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = l.ApproverID;
+
+                UPDATE a
+                SET EmployeeID = m.MaNhanVienGiu
+                FROM HR_Appraisals a
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = a.EmployeeID;
+
+                UPDATE a
+                SET ReviewerID = m.MaNhanVienGiu
+                FROM HR_Appraisals a
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = a.ReviewerID;
+
+                UPDATE p
+                SET EmployeeID = m.MaNhanVienGiu
+                FROM HR_Payslips p
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = p.EmployeeID;
+
+                UPDATE c
+                SET EmployeeID = m.MaNhanVienGiu
+                FROM HR_Contracts c
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = c.EmployeeID;
+
+                IF OBJECT_ID(N'dbo.HR_Expenses', N'U') IS NOT NULL
+                BEGIN
+                    UPDATE x
+                    SET EmployeeID = m.MaNhanVienGiu
+                    FROM HR_Expenses x
+                    JOIN @HoSoTrung m ON m.MaNhanVienTrung = x.EmployeeID;
+                END;
+
+                IF OBJECT_ID(N'dbo.HR_Users', N'U') IS NOT NULL
+                BEGIN
+                    UPDATE u
+                    SET IsActive = 0
+                    FROM dbo.HR_Users u
+                    JOIN HR_Employees e ON LOWER(e.EmployeeCode) = u.Username
+                    JOIN @HoSoTrung m ON m.MaNhanVienTrung = e.EmployeeID;
+                END;
+
+                DELETE e
+                FROM HR_Employees e
+                JOIN @HoSoTrung m ON m.MaNhanVienTrung = e.EmployeeID;
+            END;
             """);
     }
 
@@ -1272,7 +1761,13 @@ public class KhoDuLieuNhanSu
                 nhanVienIds.TryGetValue(dong.MaSoQuanLy!, out var maQuanLy))
             {
                 await ThucThiTrenKetNoiAsync(ketNoi,
-                    "UPDATE HR_Employees SET ManagerID=@MaQuanLy WHERE EmployeeID=@MaNhanVien",
+                    """
+                    UPDATE HR_Employees
+                    SET ManagerID=@MaQuanLy
+                    WHERE EmployeeID=@MaNhanVien
+                      AND IsActive = 1
+                      AND DepartmentID = (SELECT DepartmentID FROM HR_Employees WHERE EmployeeID=@MaQuanLy)
+                    """,
                     ("@MaQuanLy", maQuanLy),
                     ("@MaNhanVien", maNhanVien));
             }
@@ -1283,7 +1778,12 @@ public class KhoDuLieuNhanSu
             if (nhanVienIds.TryGetValue(phongBan.MaSoTruongPhong, out var maTruongPhong))
             {
                 await ThucThiTrenKetNoiAsync(ketNoi,
-                    "UPDATE HR_Departments SET ManagerID=@MaTruongPhong WHERE DepartmentID=@MaPhongBan",
+                    """
+                    UPDATE HR_Departments
+                    SET ManagerID=@MaTruongPhong
+                    WHERE DepartmentID=@MaPhongBan
+                      AND EXISTS (SELECT 1 FROM HR_Employees WHERE EmployeeID=@MaTruongPhong AND IsActive = 1)
+                    """,
                     ("@MaTruongPhong", maTruongPhong),
                     ("@MaPhongBan", phongBanIds[phongBan.TenPhongBan]));
             }
@@ -1386,11 +1886,16 @@ public class KhoDuLieuNhanSu
                            WHEN 1 THEN N'Chờ duyệt'
                            ELSE N'Đã duyệt'
                        END AS Status,
-                       N'Dữ liệu mẫu phục vụ demo nghiệp vụ nghỉ phép.' AS Reason
+                       N'Dữ liệu mẫu phục vụ demo nghiệp vụ nghỉ phép.' AS Reason,
+                       CASE ThuTu % 5
+                           WHEN 0 THEN N'Từ chối do trùng lịch vận hành.'
+                           WHEN 1 THEN N''
+                           ELSE N'Đồng ý theo kế hoạch nhân sự.'
+                       END AS ApprovalNote
                 FROM NhanVienNghi
             )
-            INSERT INTO HR_LeaveRequests(EmployeeID, LeaveType, StartDate, EndDate, TotalDays, Status, ApproverID, Reason)
-            SELECT EmployeeID, LeaveType, StartDate, EndDate, TotalDays, Status, ApproverID, Reason
+            INSERT INTO HR_LeaveRequests(EmployeeID, LeaveType, StartDate, EndDate, TotalDays, Status, ApproverID, Reason, ApprovalNote)
+            SELECT EmployeeID, LeaveType, StartDate, EndDate, TotalDays, Status, ApproverID, Reason, ApprovalNote
             FROM DonNghi d
             WHERE NOT EXISTS (
                 SELECT 1
@@ -1632,13 +2137,11 @@ public class KhoDuLieuNhanSu
         {
             await ThucThiTrenKetNoiAsync(ketNoi, """
                 UPDATE HR_Employees
-                SET FullName=@HoTen, DepartmentID=@MaPhongBan, PositionID=@MaViTri, BirthDate=@NgaySinh, SocialInsuranceStartDate=@NgayThamGiaBaoHiemXaHoi, JoinDate=@NgayVaoLam, IsActive=1,
+                SET FullName=@HoTen, BirthDate=@NgaySinh, SocialInsuranceStartDate=@NgayThamGiaBaoHiemXaHoi, JoinDate=@NgayVaoLam,
                     EmergencyContact=@LienHe, BankAccount=@TaiKhoan, IdentityNumber=@CanCuoc
                 WHERE EmployeeID=@MaNhanVien
                 """,
                 ("@HoTen", dong.HoTen),
-                ("@MaPhongBan", maPhongBan),
-                ("@MaViTri", maViTri),
                 ("@NgaySinh", dong.NgaySinh),
                 ("@NgayThamGiaBaoHiemXaHoi", dong.NgayThamGiaBaoHiemXaHoi),
                 ("@NgayVaoLam", dong.NgayVaoLam),
@@ -1791,16 +2294,25 @@ public class KhoDuLieuNhanSu
             PhongBan = r.GetString(5), ViTri = r.GetString(6), NgaySinh = r.GetDateTime(7), NgayVaoLam = r.GetDateTime(8), DangLamViec = r.GetBoolean(9),
             LienHeKhanCap = r.GetString(10), TaiKhoanNganHang = r.GetString(11), SoCanCuoc = r.GetString(12), NgayThamGiaBaoHiemXaHoi = r.GetDateTime(13)
         }));
-        await Doc(ketNoi, "SELECT e.FullName,l.LeaveType,l.StartDate,l.EndDate,l.TotalDays,l.Status FROM HR_LeaveRequests l JOIN HR_Employees e ON l.EmployeeID=e.EmployeeID",
-            r => duLieu.NghiPhep.Add(new NghiPhep(r.GetString(0), r.GetString(1), r.GetDateTime(2), r.GetDateTime(3), r.GetDecimal(4), DichTrangThai(r.GetString(5)))));
+        await Doc(ketNoi, """
+            SELECT e.FullName,l.LeaveType,l.StartDate,l.EndDate,l.TotalDays,l.Status,l.LeaveID,ISNULL(l.ApprovalNote,N'')
+            FROM HR_LeaveRequests l
+            JOIN HR_Employees e ON l.EmployeeID=e.EmployeeID
+            ORDER BY
+                CASE WHEN l.Status IN (N'Chờ duyệt', N'Pending') THEN 0 ELSE 1 END,
+                l.LeaveID DESC,
+                l.StartDate DESC,
+                l.EndDate DESC
+            """,
+            r => duLieu.NghiPhep.Add(new NghiPhep(r.GetString(0), r.GetString(1), r.GetDateTime(2), r.GetDateTime(3), r.GetDecimal(4), DichTrangThai(r.GetString(5)), r.GetInt32(6), r.GetString(7))));
         await Doc(ketNoi, "SELECT e.FullName,a.CheckInTime,a.CheckOutTime,ISNULL(a.WorkHours,0) FROM HR_Attendances a JOIN HR_Employees e ON a.EmployeeID=e.EmployeeID",
             r => duLieu.ChamCong.Add(new ChamCong(r.GetString(0), r.GetDateTime(1), r.IsDBNull(2) ? null : r.GetDateTime(2), r.GetDecimal(3))));
         await Doc(ketNoi, "SELECT e.FullName,r.FullName,a.ReviewPeriod,ISNULL(a.Score,0),ISNULL(a.Feedback,N''),a.Status FROM HR_Appraisals a JOIN HR_Employees e ON a.EmployeeID=e.EmployeeID JOIN HR_Employees r ON a.ReviewerID=r.EmployeeID",
             r => duLieu.DanhGia.Add(new DanhGia(r.GetString(0), r.GetString(1), r.GetString(2), r.GetDecimal(3), r.GetString(4), DichTrangThai(r.GetString(5)))));
-        await Doc(ketNoi, "SELECT e.FullName,p.PayPeriod,p.BasicSalary,p.TotalAllowances,p.TotalDeductions,p.NetSalary,p.Status FROM HR_Payslips p JOIN HR_Employees e ON p.EmployeeID=e.EmployeeID",
+        await Doc(ketNoi, "SELECT e.FullName,p.PayPeriod,p.BasicSalary,p.TotalAllowances,p.TotalDeductions,CASE WHEN p.NetSalary < 0 THEN 0 ELSE p.NetSalary END,p.Status FROM HR_Payslips p JOIN HR_Employees e ON p.EmployeeID=e.EmployeeID ORDER BY p.PayPeriod DESC, p.PayslipID DESC",
             r => duLieu.PhieuLuong.Add(new PhieuLuong(r.GetString(0), r.GetString(1), r.GetDecimal(2), r.GetDecimal(3), r.GetDecimal(4), r.GetDecimal(5), DichTrangThai(r.GetString(6)))));
         await Doc(ketNoi, """
-            SELECT a.FullName,p.Name,a.Email,ISNULL(a.Phone,''),a.Stage
+            SELECT a.FullName,p.Name,a.Email,ISNULL(a.Phone,''),a.Stage,a.ApplicantID
             FROM HR_Applicants a
             JOIN HR_JobPositions p ON a.PositionID=p.PositionID
             WHERE a.Stage NOT IN (N'Đã tiếp nhận', N'Đã ký', N'Signed')
@@ -1812,7 +2324,7 @@ public class KhoDuLieuNhanSu
               )
             ORDER BY a.ApplicantID
             """,
-            r => duLieu.UngVien.Add(new UngVien(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3), DichTrangThai(r.GetString(4)))));
+            r => duLieu.UngVien.Add(new UngVien(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3), DichTrangThai(r.GetString(4)), r.GetInt32(5))));
         TaoThongBaoTuDuLieu(duLieu);
     }
 
@@ -1857,12 +2369,12 @@ public class KhoDuLieuNhanSu
         var giamDoc = duLieu.NhanVien.First(x => x.MaSo == "GD001");
         var truongPhongNhanSu = duLieu.NhanVien.First(x => x.MaSo == "TP003");
 
-        duLieu.UngVien.Add(new UngVien("Kiều Mỹ Vy", "Nhân viên nhân sự", "vy.kieu@example.com", "0901000001", "Mới"));
-        duLieu.UngVien.Add(new UngVien("Hà Minh Sơn", "Chuyên viên pháp chế", "son.ham@example.com", "0901000002", "Sàng lọc hồ sơ"));
-        duLieu.UngVien.Add(new UngVien("Lê Quang Hòa", "Nhân viên hành chính", "hoa.le@example.com", "0901000003", "Phỏng vấn"));
-        duLieu.UngVien.Add(new UngVien("Trần Hải Yến", "Nhân viên kinh doanh", "yen.tran@example.com", "0901000004", "Đề nghị nhận việc"));
-        duLieu.UngVien.Add(new UngVien("Phạm Minh Khang", "Nhân viên kế hoạch sản xuất", "khang.pham@example.com", "0901000005", "Mới"));
-        duLieu.UngVien.Add(new UngVien("Nguyễn Thùy Dung", "Nhân viên nhân sự", "dung.nguyen@example.com", "0901000006", "Phỏng vấn"));
+        duLieu.UngVien.Add(new UngVien("Kiều Mỹ Vy", "Nhân viên nhân sự", "vy.kieu@example.com", "0901000001", "Mới", 1));
+        duLieu.UngVien.Add(new UngVien("Hà Minh Sơn", "Chuyên viên pháp chế", "son.ham@example.com", "0901000002", "Sàng lọc hồ sơ", 2));
+        duLieu.UngVien.Add(new UngVien("Lê Quang Hòa", "Nhân viên hành chính", "hoa.le@example.com", "0901000003", "Phỏng vấn", 3));
+        duLieu.UngVien.Add(new UngVien("Trần Hải Yến", "Nhân viên kinh doanh", "yen.tran@example.com", "0901000004", "Đề nghị nhận việc", 4));
+        duLieu.UngVien.Add(new UngVien("Phạm Minh Khang", "Nhân viên kế hoạch sản xuất", "khang.pham@example.com", "0901000005", "Mới", 5));
+        duLieu.UngVien.Add(new UngVien("Nguyễn Thùy Dung", "Nhân viên nhân sự", "dung.nguyen@example.com", "0901000006", "Phỏng vấn", 6));
 
         var nhanVienDemo = duLieu.NhanVien.Where(nhanVien => nhanVien.DangLamViec).ToList();
         var dauThang = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
@@ -1889,7 +2401,8 @@ public class KhoDuLieuNhanSu
                 tuNgay,
                 tuNgay.AddDays(soNgay - 1),
                 soNgay,
-                trangThaiNghi[i % trangThaiNghi.Length]));
+                trangThaiNghi[i % trangThaiNghi.Length],
+                i + 1));
         }
 
         var danhSachDanhGia = duLieu.NhanVien.Take(60).ToList();
@@ -1914,12 +2427,18 @@ public class KhoDuLieuNhanSu
     {
         duLieu.ThongBao.Clear();
 
-        var soDonNghiChoDuyet = duLieu.NghiPhep.Count(x => x.TrangThai.Contains("Chờ", StringComparison.OrdinalIgnoreCase));
+        var donNghiChoDuyet = duLieu.NghiPhep
+            .Where(x => x.TrangThai.Contains("Chờ", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x => x.ThuTuMoiNhat)
+            .ThenByDescending(x => x.TuNgay)
+            .ToList();
+        var soDonNghiChoDuyet = donNghiChoDuyet.Count;
         if (soDonNghiChoDuyet > 0)
         {
+            var donMoiNhat = donNghiChoDuyet.First();
             duLieu.ThongBao.Add(new ThongBaoHeThong(
                 "Có đơn nghỉ phép chờ duyệt",
-                $"{soDonNghiChoDuyet} đơn nghỉ phép cần quản lý xử lý.",
+                $"{soDonNghiChoDuyet} đơn nghỉ phép cần duyệt. Gần nhất: {donMoiNhat.NhanVien} nghỉ {donMoiNhat.LoaiNghi} từ {donMoiNhat.TuNgay:dd/MM/yyyy}.",
                 "Nghỉ phép",
                 DateTime.Now.AddMinutes(-18),
                 "Cảnh báo"));
@@ -1936,7 +2455,10 @@ public class KhoDuLieuNhanSu
                 "Thông tin"));
         }
 
-        var phieuLuongNhan = duLieu.PhieuLuong.FirstOrDefault();
+        var phieuLuongNhan = duLieu.PhieuLuong
+            .OrderByDescending(x => x.KyLuong)
+            .ThenByDescending(x => x.ThucLanh)
+            .FirstOrDefault();
         if (phieuLuongNhan is not null)
         {
             duLieu.ThongBao.Add(new ThongBaoHeThong(

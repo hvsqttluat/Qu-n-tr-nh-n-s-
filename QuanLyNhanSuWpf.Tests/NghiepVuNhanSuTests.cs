@@ -77,6 +77,22 @@ public sealed class NghiepVuNhanSuTests
     }
 
     [TestMethod]
+    public void NhanVien_TrangThaiLamViec_DongBoVoiDangLamViec()
+    {
+        var nhanVien = new NhanVien { DangLamViec = true };
+
+        nhanVien.TrangThaiLamViec = "Nghỉ việc";
+
+        Assert.IsFalse(nhanVien.DangLamViec);
+        Assert.AreEqual("Nghỉ việc", nhanVien.TrangThai);
+
+        nhanVien.TrangThaiLamViec = "Đang làm";
+
+        Assert.IsTrue(nhanVien.DangLamViec);
+        Assert.AreEqual("Đang làm", nhanVien.TrangThaiLamViec);
+    }
+
+    [TestMethod]
     public void NghiPhepGiaoNgay_ChiTinhDonDaGiaoNgayCanXem()
     {
         var nghiPhep = new NghiPhep("Vũ Hải An", "Nghỉ phép năm", new DateTime(2026, 6, 1), new DateTime(2026, 6, 3), 3, "Đã duyệt");

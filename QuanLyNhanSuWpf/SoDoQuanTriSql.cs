@@ -21,6 +21,7 @@ public static class SoDoQuanTriSql
                     IsActive BIT NOT NULL DEFAULT(1),
                     RequirePasswordChange BIT NOT NULL DEFAULT(0),
                     FailedLoginCount INT NOT NULL DEFAULT(0),
+                    LockoutUntilAt DATETIME2 NULL,
                     CreatedAt DATETIME2 NOT NULL DEFAULT(SYSUTCDATETIME()),
                     LastLoginAt DATETIME2 NULL
                 );
@@ -45,6 +46,8 @@ public static class SoDoQuanTriSql
                 ALTER TABLE dbo.HR_Users ADD RequirePasswordChange BIT NOT NULL DEFAULT(0);
             IF COL_LENGTH(N'dbo.HR_Users', N'FailedLoginCount') IS NULL
                 ALTER TABLE dbo.HR_Users ADD FailedLoginCount INT NOT NULL DEFAULT(0);
+            IF COL_LENGTH(N'dbo.HR_Users', N'LockoutUntilAt') IS NULL
+                ALTER TABLE dbo.HR_Users ADD LockoutUntilAt DATETIME2 NULL;
             IF COL_LENGTH(N'dbo.HR_Users', N'LastLoginAt') IS NULL
                 ALTER TABLE dbo.HR_Users ADD LastLoginAt DATETIME2 NULL;
             IF COL_LENGTH(N'dbo.HR_AuditLogs', N'MachineName') IS NULL

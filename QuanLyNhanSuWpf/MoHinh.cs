@@ -69,13 +69,31 @@ public class NhanVien : DoiTuongThongBao
         }
     }
     public DateTime NgayVaoLam { get => ngayVaoLam; set { ngayVaoLam = value; BaoThayDoi(); } }
-    public bool DangLamViec { get => dangLamViec; set { dangLamViec = value; BaoThayDoi(); } }
+    public bool DangLamViec
+    {
+        get => dangLamViec;
+        set
+        {
+            dangLamViec = value;
+            BaoThayDoi();
+            BaoThayDoi(nameof(TrangThai));
+            BaoThayDoi(nameof(TrangThaiLamViec));
+        }
+    }
     public string LienHeKhanCap { get => lienHeKhanCap; set { lienHeKhanCap = value; BaoThayDoi(); } }
     public string TaiKhoanNganHang { get => taiKhoanNganHang; set { taiKhoanNganHang = value; BaoThayDoi(); } }
     public string SoCanCuoc { get => soCanCuoc; set { soCanCuoc = value; BaoThayDoi(); } }
     public int ThuTuChucVu => BangXepHangChucVu.LayThuTu(ViTri);
     public string CapBacChucVu => BangXepHangChucVu.LayTenCapBac(ViTri);
-    public string TrangThai => DangLamViec ? "Đang làm" : "Tạm nghỉ";
+    public string TrangThai => DangLamViec ? "Đang làm" : "Nghỉ việc";
+    public string TrangThaiLamViec
+    {
+        get => TrangThai;
+        set
+        {
+            DangLamViec = !string.Equals(value, "Nghỉ việc", StringComparison.OrdinalIgnoreCase);
+        }
+    }
     public int Tuoi
     {
         get
@@ -120,7 +138,13 @@ public static class BangXepHangChucVu
 
 public record PhongBan(int MaPhongBan, string TenPhongBan, string TruongPhong);
 public record ViTriCongViec(int MaViTri, int MaPhongBan, string TenViTri, decimal LuongDuKien, string TrangThai);
-public record NghiPhep(string NhanVien, string LoaiNghi, DateTime TuNgay, DateTime DenNgay, decimal SoNgay, string TrangThai);
+public record NghiPhep(string NhanVien, string LoaiNghi, DateTime TuNgay, DateTime DenNgay, decimal SoNgay, string TrangThai, int MaDon = 0, string LyDoXuLyBanDau = "")
+{
+    public string LyDoXuLy { get; set; } = LyDoXuLyBanDau;
+    public int ThuTuTrangThai => TrangThai.Contains("Chờ", StringComparison.OrdinalIgnoreCase) ? 0 : 1;
+    public int ThuTuMoiNhat => MaDon;
+    public bool DangChoDuyet => ThuTuTrangThai == 0;
+}
 public record ChamCong(string NhanVien, DateTime GioVao, DateTime? GioRa, decimal SoGio)
 {
     public bool DangTrongCa => GioRa is null;
@@ -150,7 +174,7 @@ public record ChamCong(string NhanVien, DateTime GioVao, DateTime? GioRa, decima
 }
 public record DanhGia(string NhanVien, string NguoiDanhGia, string KyDanhGia, decimal Diem, string NhanXet, string TrangThai);
 public record PhieuLuong(string NhanVien, string KyLuong, decimal LuongCoBan, decimal PhuCap, decimal KhauTru, decimal ThucLanh, string TrangThai);
-public record UngVien(string HoTen, string ViTri, string Email, string DienThoai, string GiaiDoan);
+public record UngVien(string HoTen, string ViTri, string Email, string DienThoai, string GiaiDoan, int MaUngVien = 0);
 public record DiemLuongThang(string Thang, decimal TongLuong, int TongNhanVien);
 public record MucUngVienTheoViTri(string TenViTri, int SoLuong);
 public record DongTraCuuNhanSu(
@@ -160,6 +184,7 @@ public record DongTraCuuNhanSu(
     string HoTen,
     string PhongBan,
     string ViTri,
+    string TrangThai,
     decimal? DiemDanhGia,
     decimal LuongCoBan,
     decimal ThucLanh,
@@ -170,6 +195,7 @@ public record DongTraCuuNhanSu(
 
 public record TongHopPhongBanDieuHanh(
     int ThuTuCapBac,
+    int MaPhongBan,
     string TenPhongBan,
     string NhanSuCapCao,
     string ChucVuCaoNhat,
@@ -230,15 +256,20 @@ public class ThongBaoHeThong : DoiTuongThongBao
 
 public class BieuMauUngVien : DoiTuongThongBao
 {
+    private int maUngVien;
     private string hoTen = "";
     private string email = "";
     private string dienThoai = "";
     private int maViTri = 1;
+    private string giaiDoan = "Mới";
 
+    public int MaUngVien { get => maUngVien; set { maUngVien = value; BaoThayDoi(); BaoThayDoi(nameof(DangSua)); } }
     public string HoTen { get => hoTen; set { hoTen = value; BaoThayDoi(); } }
     public string Email { get => email; set { email = value; BaoThayDoi(); } }
     public string DienThoai { get => dienThoai; set { dienThoai = value; BaoThayDoi(); } }
     public int MaViTri { get => maViTri; set { maViTri = value; BaoThayDoi(); } }
+    public string GiaiDoan { get => giaiDoan; set { giaiDoan = value; BaoThayDoi(); } }
+    public bool DangSua => MaUngVien > 0;
 }
 
 public class BieuMauNghiPhep : DoiTuongThongBao

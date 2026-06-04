@@ -31,6 +31,7 @@ public sealed class SoSanhNhanVienTheoUuTien(ManHinhChinhViewModel manHinh) : IC
 public class ManHinhChinhViewModel : DoiTuongThongBao
 {
     private const string TatCaPhongBan = "Tất cả phòng ban";
+    private const string TatCaTrangThaiNhanVien = "Tất cả trạng thái";
     private const string TatCaTrangThaiChamCong = "Tất cả trạng thái";
     private readonly KhoDuLieuNhanSu khoDuLieu = new();
     private KhoDuLieuUngDung duLieu = new();
@@ -39,6 +40,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private string tuKhoaThongBao = "";
     private string tuKhoaTraCuuDieuHanh = "";
     private string phongBanNhanVienDangChon = TatCaPhongBan;
+    private string trangThaiNhanVienDangChon = TatCaTrangThaiNhanVien;
+    private int tabNhanVienDangChon;
     private string tuKhoaBangLuong = "";
     private string phongBanBangLuongDangChon = TatCaPhongBan;
     private string tuKhoaChamCong = "";
@@ -46,6 +49,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private string trangThaiChamCongDangChon = TatCaTrangThaiChamCong;
     private DateTime? tuNgayChamCong = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private DateTime? denNgayChamCong = DateTime.Today;
+    private string kyNghiPhepDangChon = "Tháng này";
+    private string phongBanNghiPhepDangChon = TatCaPhongBan;
     private string kyBaoCaoNhanSuDangChon = "Tháng này";
     private bool chiThongBaoChuaDoc;
     private bool dangMoBieuMauThongBao;
@@ -81,10 +86,13 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private string phongBanTraCuuDangChon = TatCaPhongBan;
     private readonly DispatcherTimer dongHo = new() { Interval = TimeSpan.FromSeconds(30) };
     private readonly DispatcherTimer boDemThongBaoNhanh = new() { Interval = TimeSpan.FromSeconds(3) };
+    private readonly List<ThongBaoHeThong> thongBaoPhienLamViec = [];
+    private readonly HashSet<string> khoaThongBaoDaDoc = new(StringComparer.Ordinal);
 
     public ManHinhChinhViewModel(PhienDangNhap? phienDangNhap = null)
     {
         PhienDangNhap = phienDangNhap ?? PhienDangNhap.MacDinh;
+        TaiTrangThaiDocThongBao();
         mucDangChon = "Tổng quan";
         CacMucDieuHuong = ["Tổng quan", "Nhân viên", "Phòng ban", "Ứng viên", "Chấm công", "Nghỉ phép", "Đánh giá", "Bảng lương", "Báo cáo", "Cài đặt tài khoản"];
         CacTaiKhoanHeThong = TaoTaiKhoanHeThongMau(PhienDangNhap);
@@ -92,7 +100,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         ThemMoiLenh = new LenhGiaoDien(_ => TaoMoiNhanVien(), _ => CoQuyenQuanLyHoSoNhanVien);
         SuaLenh = new LenhGiaoDien(_ => DuaVaoBieuMau(), _ => CoTheThaoTacNhanVienDangChon());
         LuuLenh = new LenhGiaoDien(async _ => await LuuNhanVien(), _ => CoQuyenQuanLyHoSoNhanVien);
-        XoaLenh = new LenhGiaoDien(async _ => await XoaNhanVien(), _ => CoTheSuaNhanVienDangChon());
+        XoaLenh = new LenhGiaoDien(async _ => await XoaNhanVien(), _ => CoTheSuaNhanVienDangChon() && NhanVienDangChon?.DangLamViec == true);
         TaiLaiLenh = new LenhGiaoDien(async _ => await TaiDuLieu());
         TaoThongBaoThuLenh = new LenhGiaoDien(_ => MoBieuMauThongBao(), _ => CoQuyenTaoThongBao);
         GuiThongBaoLenh = new LenhGiaoDien(_ => GuiThongBaoMoi(), _ => CoQuyenTaoThongBao);
@@ -100,13 +108,16 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         ChonTepThongBaoLenh = new LenhGiaoDien(_ => ChonTepThongBao(), _ => CoQuyenTaoThongBao);
         XoaTepThongBaoLenh = new LenhGiaoDien(_ => XoaTepThongBao(), _ => CoQuyenTaoThongBao && CoTepThongBaoMoi);
         MoTepThongBaoLenh = new LenhGiaoDien(p => MoTepThongBao(p));
-        CapNhatDocThongBaoLenh = new LenhGiaoDien(_ => LamMoiThongBao());
-        TaoPhongBanLenh = new LenhGiaoDien(_ => TaoMoiPhongBan());
-        SuaPhongBanLenh = new LenhGiaoDien(_ => DuaPhongBanVaoBieuMau(), _ => PhongBanDangChon is not null);
-        LuuPhongBanLenh = new LenhGiaoDien(async _ => await LuuPhongBan());
-        XoaPhongBanLenh = new LenhGiaoDien(async _ => await XoaPhongBan(), _ => PhongBanDangChon is not null);
-        GanTruongPhongLenh = new LenhGiaoDien(async _ => await GanTruongPhong(), _ => PhongBanDangChon is not null && DuLieu.NhanVien.Any());
-        TaoUngVienLenh = new LenhGiaoDien(async _ => await TaoUngVien());
+        MoThongBaoLenh = new LenhGiaoDien(p => MoThongBao(p));
+        CapNhatDocThongBaoLenh = new LenhGiaoDien(p => CapNhatDocThongBao(p));
+        TaoPhongBanLenh = new LenhGiaoDien(_ => TaoMoiPhongBan(), _ => CoQuyenPhongBan);
+        SuaPhongBanLenh = new LenhGiaoDien(_ => DuaPhongBanVaoBieuMau(), _ => CoTheSuaPhongBanDangChon());
+        LuuPhongBanLenh = new LenhGiaoDien(async _ => await LuuPhongBan(), _ => CoTheLuuPhongBan());
+        XoaPhongBanLenh = new LenhGiaoDien(async _ => await XoaPhongBan(), _ => CoTheSuaPhongBanDangChon());
+        GanTruongPhongLenh = new LenhGiaoDien(async _ => await GanTruongPhong(), _ => CoTheGanTruongPhongDangChon());
+        TaoMoiUngVienLenh = new LenhGiaoDien(_ => TaoMoiUngVien(), _ => CoQuyenTuyenDung);
+        SuaUngVienLenh = new LenhGiaoDien(_ => DuaUngVienVaoBieuMau(), _ => UngVienDangChon is not null && LocUngVien(UngVienDangChon));
+        TaoUngVienLenh = new LenhGiaoDien(async _ => await LuuUngVien(), _ => CoQuyenTuyenDung);
         ChuyenUngVienThanhNhanVienLenh = new LenhGiaoDien(async _ => await ChuyenUngVienThanhNhanVien(), _ => CoTheChuyenUngVienThanhNhanVien());
         ChuyenGiaiDoanUngVienLenh = new LenhGiaoDien(async _ => await ChuyenGiaiDoanUngVien(), _ => UngVienDangChon is not null && LocUngVien(UngVienDangChon));
         XuatHopDongLamViecLenh = new LenhGiaoDien(_ => XuatHopDongLamViec(), _ => UngVienDangChon is not null && LocUngVien(UngVienDangChon));
@@ -114,8 +125,10 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         RaCaLenh = new LenhGiaoDien(async _ => await RaCa(), _ => CoTheRaCaDangChon);
         DieuChinhCongLenh = new LenhGiaoDien(async _ => await DieuChinhCong(), _ => CoQuyenDieuChinhCong && ChamCongDangChon is not null && LocChamCong(ChamCongDangChon));
         TaoNghiPhepLenh = new LenhGiaoDien(async _ => await TaoNghiPhep());
-        DuyetNghiPhepLenh = new LenhGiaoDien(async _ => await CapNhatNghiPhep("Đã duyệt"), _ => CoQuyenDuyetNghiPhep && NghiPhepDangChon is not null && LocNghiPhep(NghiPhepDangChon));
-        TuChoiNghiPhepLenh = new LenhGiaoDien(async _ => await CapNhatNghiPhep("Từ chối"), _ => CoQuyenDuyetNghiPhep && NghiPhepDangChon is not null && LocNghiPhep(NghiPhepDangChon));
+        DuyetNghiPhepLenh = new LenhGiaoDien(async _ => await CapNhatNghiPhep("Đã duyệt"), _ => CoTheXuLyNghiPhep(NghiPhepDangChon));
+        TuChoiNghiPhepLenh = new LenhGiaoDien(async _ => await CapNhatNghiPhep("Từ chối"), _ => CoTheXuLyNghiPhep(NghiPhepDangChon));
+        DuyetNghiPhepDongLenh = new LenhGiaoDien(async p => await CapNhatNghiPhepTuDong(p, "Đã duyệt"), CoTheXuLyNghiPhep);
+        TuChoiNghiPhepDongLenh = new LenhGiaoDien(async p => await CapNhatNghiPhepTuDong(p, "Từ chối"), CoTheXuLyNghiPhep);
         TaoMoiDanhGiaLenh = new LenhGiaoDien(_ => TaoMoiDanhGia(), _ => CoQuyenGhiNhanDanhGia);
         SuaDanhGiaLenh = new LenhGiaoDien(_ => DuaDanhGiaVaoBieuMau(), _ => CoQuyenGhiNhanDanhGia && DanhGiaDangChon is not null && LocDanhGia(DanhGiaDangChon));
         TaoDanhGiaLenh = new LenhGiaoDien(async _ => await LuuDanhGia(), _ => CoQuyenGhiNhanDanhGia);
@@ -134,6 +147,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         SaoLuuDuLieuLenh = new LenhGiaoDien(_ => SaoLuuDuLieu());
         PhucHoiDuLieuLenh = new LenhGiaoDien(_ => PhucHoiDuLieu());
 
+        bieuMauNhanVien.PropertyChanged += BieuMauNhanVien_PropertyChanged;
+        bieuMauPhongBan.PropertyChanged += BieuMauPhongBan_PropertyChanged;
         CapNhatDongHo();
         dongHo.Tick += (_, _) => CapNhatDongHo();
         dongHo.Start();
@@ -166,12 +181,15 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public ICommand ChonTepThongBaoLenh { get; }
     public ICommand XoaTepThongBaoLenh { get; }
     public ICommand MoTepThongBaoLenh { get; }
+    public ICommand MoThongBaoLenh { get; }
     public ICommand CapNhatDocThongBaoLenh { get; }
     public ICommand TaoPhongBanLenh { get; }
     public ICommand SuaPhongBanLenh { get; }
     public ICommand LuuPhongBanLenh { get; }
     public ICommand XoaPhongBanLenh { get; }
     public ICommand GanTruongPhongLenh { get; }
+    public ICommand TaoMoiUngVienLenh { get; }
+    public ICommand SuaUngVienLenh { get; }
     public ICommand TaoUngVienLenh { get; }
     public ICommand ChuyenUngVienThanhNhanVienLenh { get; }
     public ICommand ChuyenGiaiDoanUngVienLenh { get; }
@@ -182,6 +200,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public ICommand TaoNghiPhepLenh { get; }
     public ICommand DuyetNghiPhepLenh { get; }
     public ICommand TuChoiNghiPhepLenh { get; }
+    public ICommand DuyetNghiPhepDongLenh { get; }
+    public ICommand TuChoiNghiPhepDongLenh { get; }
     public ICommand TaoMoiDanhGiaLenh { get; }
     public ICommand SuaDanhGiaLenh { get; }
     public ICommand TaoDanhGiaLenh { get; }
@@ -214,6 +234,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             mucDangChon = value;
             BaoThayDoi();
             BaoThayDoi(nameof(DangXemTongQuan));
+            BaoThayDoi(nameof(HienThiBieuMauThongBaoChung));
+            BaoThayDoi(nameof(HienThiBieuMauThongBaoTrungTam));
             CapNhatHienThiMuc();
         }
     }
@@ -253,6 +275,23 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             LamMoiBoLocNhanVien();
         }
     }
+    public string TrangThaiNhanVienDangChon
+    {
+        get => trangThaiNhanVienDangChon;
+        set
+        {
+            var giaTri = string.IsNullOrWhiteSpace(value) ? TatCaTrangThaiNhanVien : value;
+            if (string.Equals(trangThaiNhanVienDangChon, giaTri, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            trangThaiNhanVienDangChon = giaTri;
+            BaoThayDoi();
+            LamMoiBoLocNhanVien();
+        }
+    }
+    public int TabNhanVienDangChon { get => tabNhanVienDangChon; set { tabNhanVienDangChon = value; BaoThayDoi(); } }
     public string TuKhoaBangLuong
     {
         get => tuKhoaBangLuong;
@@ -363,6 +402,38 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             LamMoiBoLocChamCong();
         }
     }
+    public string KyNghiPhepDangChon
+    {
+        get => kyNghiPhepDangChon;
+        set
+        {
+            var giaTri = string.IsNullOrWhiteSpace(value) ? "Tháng này" : value;
+            if (string.Equals(kyNghiPhepDangChon, giaTri, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            kyNghiPhepDangChon = giaTri;
+            BaoThayDoi();
+            LamMoiBoLocNghiPhep();
+        }
+    }
+    public string PhongBanNghiPhepDangChon
+    {
+        get => phongBanNghiPhepDangChon;
+        set
+        {
+            var giaTri = string.IsNullOrWhiteSpace(value) ? TatCaPhongBan : value;
+            if (string.Equals(phongBanNghiPhepDangChon, giaTri, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            phongBanNghiPhepDangChon = giaTri;
+            BaoThayDoi();
+            LamMoiBoLocNghiPhep();
+        }
+    }
     public string KyBaoCaoNhanSuDangChon
     {
         get => kyBaoCaoNhanSuDangChon;
@@ -389,7 +460,18 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         }
     }
     public bool ChiThongBaoChuaDoc { get => chiThongBaoChuaDoc; set { chiThongBaoChuaDoc = value; BaoThayDoi(); DanhSachThongBaoView.Refresh(); } }
-    public bool DangMoBieuMauThongBao { get => dangMoBieuMauThongBao; set { dangMoBieuMauThongBao = value; BaoThayDoi(); BaoThayDoi(nameof(HienThiBieuMauThongBao)); } }
+    public bool DangMoBieuMauThongBao
+    {
+        get => dangMoBieuMauThongBao;
+        set
+        {
+            dangMoBieuMauThongBao = value;
+            BaoThayDoi();
+            BaoThayDoi(nameof(HienThiBieuMauThongBao));
+            BaoThayDoi(nameof(HienThiBieuMauThongBaoChung));
+            BaoThayDoi(nameof(HienThiBieuMauThongBaoTrungTam));
+        }
+    }
     public string TieuDeThongBaoMoi { get => tieuDeThongBaoMoi; set { tieuDeThongBaoMoi = value; BaoThayDoi(); } }
     public string NoiDungThongBaoMoi { get => noiDungThongBaoMoi; set { noiDungThongBaoMoi = value; BaoThayDoi(); } }
     public string PhanHeThongBaoMoi { get => phanHeThongBaoMoi; set { phanHeThongBaoMoi = value; BaoThayDoi(); } }
@@ -399,19 +481,42 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public string ThongBaoNhanh { get => thongBaoNhanh; set { thongBaoNhanh = value; BaoThayDoi(); } }
     public bool DangHienThongBaoNhanh { get => dangHienThongBaoNhanh; set { dangHienThongBaoNhanh = value; BaoThayDoi(); BaoThayDoi(nameof(HienThiThongBaoNhanh)); } }
     public NhanVien? NhanVienDangChon { get => nhanVienDangChon; set { nhanVienDangChon = value is not null && !CoTheXemNhanVien(value) ? null : value; BaoThayDoi(); NeuDangSuaNhanVienThiNapBieuMau(); LamMoiLenhChonNhanVien(); } }
-    public NhanVien BieuMauNhanVien { get => bieuMauNhanVien; set { bieuMauNhanVien = value; BaoThayDoi(); } }
+    public NhanVien BieuMauNhanVien
+    {
+        get => bieuMauNhanVien;
+        set
+        {
+            bieuMauNhanVien.PropertyChanged -= BieuMauNhanVien_PropertyChanged;
+            bieuMauNhanVien = value;
+            bieuMauNhanVien.PropertyChanged += BieuMauNhanVien_PropertyChanged;
+            DongBoViTriNhanVienTheoPhongBan();
+            BaoThayDoi();
+            BaoThayDoi(nameof(ViTriTheoPhongBanBieuMauNhanVien));
+        }
+    }
     public PhongBan? PhongBanDangChon { get => phongBanDangChon; set { phongBanDangChon = value; BaoThayDoi(); DongBoDongTongHopPhongBanDangChon(); NeuDangSuaPhongBanThiNapBieuMau(); LamMoiLenhChonPhongBan(); } }
     public TongHopPhongBanDieuHanh? TongHopPhongBanDangChon { get => tongHopPhongBanDangChon; set { tongHopPhongBanDangChon = value; BaoThayDoi(); ChonPhongBanTuTongHop(value); } }
-    public UngVien? UngVienDangChon { get => ungVienDangChon; set { ungVienDangChon = value; BaoThayDoi(); (ChuyenUngVienThanhNhanVienLenh as LenhGiaoDien)?.LamMoi(); (ChuyenGiaiDoanUngVienLenh as LenhGiaoDien)?.LamMoi(); (XuatHopDongLamViecLenh as LenhGiaoDien)?.LamMoi(); } }
+    public UngVien? UngVienDangChon { get => ungVienDangChon; set { ungVienDangChon = value; BaoThayDoi(); (SuaUngVienLenh as LenhGiaoDien)?.LamMoi(); (ChuyenUngVienThanhNhanVienLenh as LenhGiaoDien)?.LamMoi(); (ChuyenGiaiDoanUngVienLenh as LenhGiaoDien)?.LamMoi(); (XuatHopDongLamViecLenh as LenhGiaoDien)?.LamMoi(); } }
     public ChamCong? ChamCongDangChon { get => chamCongDangChon; set { chamCongDangChon = value; BaoThayDoi(); (DieuChinhCongLenh as LenhGiaoDien)?.LamMoi(); } }
-    public NghiPhep? NghiPhepDangChon { get => nghiPhepDangChon; set { nghiPhepDangChon = value; BaoThayDoi(); (DuyetNghiPhepLenh as LenhGiaoDien)?.LamMoi(); (TuChoiNghiPhepLenh as LenhGiaoDien)?.LamMoi(); } }
+    public NghiPhep? NghiPhepDangChon { get => nghiPhepDangChon; set { nghiPhepDangChon = value; BaoThayDoi(); LamMoiLenhNghiPhep(); } }
     public DanhGia? DanhGiaDangChon { get => danhGiaDangChon; set { danhGiaDangChon = value; BaoThayDoi(); LamMoiLenhDanhGia(); } }
     public PhieuLuong? PhieuLuongDangChon { get => phieuLuongDangChon; set { phieuLuongDangChon = value; BaoThayDoi(); (XemPhieuLuongLenh as LenhGiaoDien)?.LamMoi(); (XacNhanTraLuongLenh as LenhGiaoDien)?.LamMoi(); } }
     public TaiKhoanHeThong? TaiKhoanDangChon { get => taiKhoanDangChon; set { taiKhoanDangChon = value; BaoThayDoi(); (KhoaMoTaiKhoanLenh as LenhGiaoDien)?.LamMoi(); (DatLaiMatKhauLenh as LenhGiaoDien)?.LamMoi(); } }
     public BieuMauUngVien BieuMauUngVien { get => bieuMauUngVien; set { bieuMauUngVien = value; BaoThayDoi(); } }
     public BieuMauNghiPhep BieuMauNghiPhep { get => bieuMauNghiPhep; set { bieuMauNghiPhep = value; BaoThayDoi(); } }
     public BieuMauDanhGia BieuMauDanhGia { get => bieuMauDanhGia; set { bieuMauDanhGia = value; BaoThayDoi(); } }
-    public BieuMauPhongBan BieuMauPhongBan { get => bieuMauPhongBan; set { bieuMauPhongBan = value; BaoThayDoi(); } }
+    public BieuMauPhongBan BieuMauPhongBan
+    {
+        get => bieuMauPhongBan;
+        set
+        {
+            bieuMauPhongBan.PropertyChanged -= BieuMauPhongBan_PropertyChanged;
+            bieuMauPhongBan = value;
+            bieuMauPhongBan.PropertyChanged += BieuMauPhongBan_PropertyChanged;
+            BaoThayDoi();
+            LamMoiLenhChonPhongBan();
+        }
+    }
 
     public int TongNhanVien => LayNhanVienTrongPhamVi().Count();
     public int NhanSuConHieuLuc => LayNhanVienTrongPhamVi().Count(n => n.DangLamViec);
@@ -454,10 +559,15 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public bool CoTepThongBaoMoi => !string.IsNullOrWhiteSpace(DuongDanTepThongBaoMoi);
     public string TenTepThongBaoHienThi => CoTepThongBaoMoi ? TenTepThongBaoMoi : "Chưa chọn tệp đính kèm";
     public Visibility HienThiBieuMauThongBao => DangMoBieuMauThongBao ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility HienThiBieuMauThongBaoChung => DangMoBieuMauThongBao && MucDangChon != "Tổng quan" ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility HienThiBieuMauThongBaoTrungTam => DangMoBieuMauThongBao && MucDangChon == "Tổng quan" ? Visibility.Visible : Visibility.Collapsed;
     public Visibility HienThiThongBaoNhanh => DangHienThongBaoNhanh ? Visibility.Visible : Visibility.Collapsed;
     public IReadOnlyList<string> CacPhanHeThongBao { get; } = ["Hệ thống", "Tuyển dụng", "Nhân viên", "Phòng ban", "Chấm công", "Nghỉ phép", "Đánh giá", "Bảng lương", "Báo cáo", "Cài đặt tài khoản"];
     public IReadOnlyList<string> CacMucDoThongBao { get; } = ["Thông tin", "Cảnh báo", "Khẩn cấp", "Thành công"];
     public IReadOnlyList<string> CacKyBaoCaoNhanSu { get; } = ["Ngày hôm nay", "Tháng này", "Quý này", "Năm nay", "Toàn bộ"];
+    public IReadOnlyList<string> CacTrangThaiNhanVien { get; } = [TatCaTrangThaiNhanVien, "Đang làm", "Nghỉ việc"];
+    public IReadOnlyList<string> CacTrangThaiLamViec { get; } = ["Đang làm", "Nghỉ việc"];
+    public IReadOnlyList<string> CacGiaiDoanUngVien { get; } = ["Mới", "Sàng lọc hồ sơ", "Phỏng vấn", "Đề nghị nhận việc"];
     public IReadOnlyList<string> CacTrangThaiChamCong { get; } = [TatCaTrangThaiChamCong, "Đang trong ca", "Đủ công", "Thiếu giờ", "Tăng ca"];
     public IReadOnlyList<string> CacTrangThaiDanhGia { get; } = ["Nháp", "Đang đánh giá", "Hoàn tất"];
     public decimal TongLuongChoTra => DuLieu.PhieuLuong.Where(p => CoTheXemTheoTen(p.NhanVien) && !p.TrangThai.Contains("Đã trả", StringComparison.OrdinalIgnoreCase)).Sum(p => p.ThucLanh);
@@ -466,8 +576,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public decimal TongGioCongThangDangChon => NhanVienDangChon is null ? 0 : TinhTongGioCongThang(NhanVienDangChon);
     public decimal NgayCongQuyDoiDangChon => NhanVienDangChon is null ? 0 : TinhNgayCongQuyDoi(NhanVienDangChon);
     public decimal LuongCoBanDuKienDangChon => NhanVienDangChon is null ? 0 : LayLuongCoBan(NhanVienDangChon);
-    public bool CoTheVaoCaDangChon => NhanVienDangChon is not null && CoTheThaoTacNhanVienDangChon() && !CoCaDangMo(NhanVienDangChon);
-    public bool CoTheRaCaDangChon => NhanVienDangChon is not null && CoTheThaoTacNhanVienDangChon() && CoCaDangMo(NhanVienDangChon);
+    public bool CoTheVaoCaDangChon => NhanVienDangChon is not null && NhanVienDangChon.DangLamViec && CoTheThaoTacNhanVienDangChon() && !CoCaDangMo(NhanVienDangChon);
+    public bool CoTheRaCaDangChon => NhanVienDangChon is not null && NhanVienDangChon.DangLamViec && CoTheThaoTacNhanVienDangChon() && CoCaDangMo(NhanVienDangChon);
     public string TrangThaiCaDangChon => TaoMoTaTrangThaiCaDangChon();
     public string CaGanNhatDangChon => TaoMoTaCaGanNhatDangChon();
     public ObservableCollection<DiemLuongThang> DuLieuLuong12Thang { get => duLieuLuong12Thang; private set { duLieuLuong12Thang = value; BaoThayDoi(); } }
@@ -475,8 +585,16 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public ObservableCollection<DongTraCuuNhanSu> DanhSachNhanSuTraCuu { get => danhSachNhanSuTraCuu; private set { danhSachNhanSuTraCuu = value; BaoThayDoi(); } }
     public ObservableCollection<TongHopPhongBanDieuHanh> TongHopPhongBanDieuHanh { get => tongHopPhongBanDieuHanh; private set { tongHopPhongBanDieuHanh = value; BaoThayDoi(); } }
     public IReadOnlyList<NhanVien> NhanVienTrongPhamVi => SapXepNhanVienTheoUuTien(LayNhanVienTrongPhamVi()).ToList();
+    public IReadOnlyList<NhanVien> NhanVienDangLamViecTrongPhamVi => SapXepNhanVienTheoUuTien(LayNhanVienDangLamViecTrongPhamVi()).ToList();
+    public IReadOnlyList<NhanVien> NhanVienCoTheBoNhiemTruongPhong => NhanVienDangLamViecTrongPhamVi;
     public IReadOnlyList<PhongBan> PhongBanTrongPhamVi => LayPhongBanTrongPhamVi().OrderBy(p => p.TenPhongBan).ToList();
     public IReadOnlyList<ViTriCongViec> ViTriTrongPhamVi => DuLieu.ViTri.Where(v => PhongBanTrongPhamVi.Any(p => p.MaPhongBan == v.MaPhongBan)).OrderBy(v => v.TenViTri).ToList();
+    public IReadOnlyList<ViTriCongViec> ViTriTheoPhongBanBieuMauNhanVien => DuLieu.ViTri
+        .Where(v => v.MaPhongBan == BieuMauNhanVien.MaPhongBan)
+        .OrderBy(v => BangXepHangChucVu.LayThuTu(v.TenViTri) == 3 ? 1 : 0)
+        .ThenBy(v => BangXepHangChucVu.LayThuTu(v.TenViTri))
+        .ThenBy(v => v.TenViTri)
+        .ToList();
     public IReadOnlyList<string> CacPhongBanTraCuu { get => cacPhongBanTraCuu; private set { cacPhongBanTraCuu = value; BaoThayDoi(); } }
     public string PhongBanTraCuuDangChon
     {
@@ -507,9 +625,10 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         DuLieu.NhanVien.Where(nhanVien => LocNhanVien(nhanVien)).Select(nhanVien => nhanVien.HoTen))?.NhanVien ?? "Chưa có đánh giá";
     public string LuongCaoHoSoHienThi => TaoMoTaLuongCao(
         LayPhieuLuongCaoNhat(DuLieu.NhanVien.Where(nhanVien => LocNhanVien(nhanVien)).Select(nhanVien => nhanVien.HoTen)));
-    public int SoPhieuLuongDaLoc => DuLieu.PhieuLuong.Count(LocPhieuLuong);
-    public decimal TongThucLanhDaLoc => DuLieu.PhieuLuong.Where(LocPhieuLuong).Sum(p => p.ThucLanh);
-    public string LuongCaoBangLuongHienThi => TaoMoTaLuongCao(LayPhieuLuongCaoNhat(DuLieu.PhieuLuong.Where(LocPhieuLuong).Select(p => p.NhanVien)));
+    public IReadOnlyList<PhieuLuong> BangLuongNhanVienHienThi => LayBangLuongNhanVienHienThi().ToList();
+    public int SoPhieuLuongDaLoc => BangLuongNhanVienHienThi.Count;
+    public decimal TongThucLanhDaLoc => BangLuongNhanVienHienThi.Sum(p => Math.Max(0, p.ThucLanh));
+    public string LuongCaoBangLuongHienThi => TaoMoTaLuongCao(LayPhieuLuongCaoNhat(BangLuongNhanVienHienThi));
     public int SoChamCongDaLoc => LayChamCongDaLoc().Count();
     public decimal TongGioChamCongDaLoc => LayChamCongDaLoc().Sum(TinhSoGioChamCong);
     public decimal TongNgayCongChamCongDaLoc => Math.Round(TongGioChamCongDaLoc / QuyTacNghiepVuNhanSu.SoGioMotNgayCong, 2);
@@ -535,6 +654,11 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public decimal TongGioCongHomNay => DuLieu.ChamCong.Where(c => LocChamCong(c) && c.GioVao.Date == DateTime.Today).Sum(TinhSoGioChamCong);
     public int SoChamCongTrongKyBaoCao => DuLieu.ChamCong.Count(c => LocChamCong(c) && ThuocKyBaoCao(c.GioVao));
     public decimal TongGioCongTrongKyBaoCao => DuLieu.ChamCong.Where(c => LocChamCong(c) && ThuocKyBaoCao(c.GioVao)).Sum(TinhSoGioChamCong);
+    public int SoNghiPhepDaLoc => DuLieu.NghiPhep.Count(LocNghiPhepTheoBoLocManHinh);
+    public int SoNghiPhepChoDuyetDaLoc => DuLieu.NghiPhep.Count(n => LocNghiPhepTheoBoLocManHinh(n) && n.DangChoDuyet);
+    public int SoNghiPhepDaDuyetDaLoc => DuLieu.NghiPhep.Count(n => LocNghiPhepTheoBoLocManHinh(n) && QuyTacNghiepVuNhanSu.LaTrangThaiNghiPhepDaDuyet(n.TrangThai));
+    public decimal SoNgayNghiPhepDaLoc => DuLieu.NghiPhep.Where(LocNghiPhepTheoBoLocManHinh).Sum(n => n.SoNgay);
+    public string MoTaBoLocNghiPhep => $"Kỳ {KyNghiPhepDangChon.ToLowerInvariant()}, phòng ban: {PhongBanNghiPhepDangChon}.";
     public int SoNghiPhepTrongKyBaoCao => DuLieu.NghiPhep.Count(n => LocNghiPhep(n) && NghiPhepThuocKyBaoCao(n));
     public int NhanSuNghiDaDuyetTrongKyBaoCao => LayTenNhanVienNghiDaDuyetTrongKyBaoCao().Count;
     public int QuanSoHienDienTrongKyBaoCao => Math.Max(0, NhanSuConHieuLuc - NhanSuNghiDaDuyetTrongKyBaoCao);
@@ -580,7 +704,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public string NhanSuLuongCaoHienThi => NhanSuLuongCaoNhat?.HoTen ?? "Chưa có bảng lương";
     public string LuongCaoHienThi => NhanSuLuongCaoNhat is null
         ? "Chưa có dữ liệu kỳ lương"
-        : $"{NhanSuLuongCaoNhat.ThucLanh:N0} đ - {NhanSuLuongCaoNhat.ViTri}";
+        : $"{NhanSuLuongCaoNhat.ThucLanh:N0} đ | {NhanSuLuongCaoNhat.ViTri}";
     public string KyLuongGanNhatHienThi => DuLieu.PhieuLuong
         .Where(p => CoTheXemTheoTen(p.NhanVien))
         .OrderByDescending(p => p.KyLuong)
@@ -594,8 +718,18 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     {
         var maNhanVienDangChon = NhanVienDangChon?.MaNhanVien;
         var tenNhanVienDangChon = NhanVienDangChon?.HoTen;
+        var coPhongBanCanGiu = PhongBanDangChon is not null
+            || BieuMauPhongBan.MaPhongBan > 0
+            || !string.IsNullOrWhiteSpace(BieuMauPhongBan.TenPhongBan);
+        var maPhongBanDangChon = PhongBanDangChon?.MaPhongBan ?? BieuMauPhongBan.MaPhongBan;
+        var tenPhongBanDangChon = string.IsNullOrWhiteSpace(BieuMauPhongBan.TenPhongBan)
+            ? PhongBanDangChon?.TenPhongBan
+            : BieuMauPhongBan.TenPhongBan.Trim();
         var ketQua = await khoDuLieu.TaiDuLieuAsync();
         DuLieu = ketQua.DuLieu;
+        ChuanHoaPhieuLuongAm();
+        NhapThongBaoPhienLamViec();
+        ApDungTrangThaiDocThongBao();
         NguonDuLieu = ketQua.NguonDuLieu;
         CauHinhDanhSachNhanVienView();
         DanhSachThongBaoView = CollectionViewSource.GetDefaultView(DuLieu.ThongBao);
@@ -606,16 +740,21 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         BaoThayDoi(nameof(DanhSachUngVienView));
         DanhSachPhieuLuongView = CollectionViewSource.GetDefaultView(DuLieu.PhieuLuong);
         DanhSachPhieuLuongView.Filter = obj => obj is PhieuLuong phieuLuong && LocPhieuLuong(phieuLuong);
+        DanhSachPhieuLuongView.SortDescriptions.Clear();
+        DanhSachPhieuLuongView.SortDescriptions.Add(new SortDescription(nameof(PhieuLuong.KyLuong), ListSortDirection.Descending));
+        DanhSachPhieuLuongView.SortDescriptions.Add(new SortDescription(nameof(PhieuLuong.NhanVien), ListSortDirection.Ascending));
         BaoThayDoi(nameof(DanhSachPhieuLuongView));
+        BaoThayDoi(nameof(BangLuongNhanVienHienThi));
+        BaoThayDoi(nameof(SoPhieuLuongDaLoc));
+        BaoThayDoi(nameof(TongThucLanhDaLoc));
+        BaoThayDoi(nameof(LuongCaoBangLuongHienThi));
         DanhSachChamCongView = CollectionViewSource.GetDefaultView(DuLieu.ChamCong);
         DanhSachChamCongView.Filter = obj => obj is ChamCong chamCong && LocChamCong(chamCong);
         DanhSachChamCongView.SortDescriptions.Clear();
         DanhSachChamCongView.SortDescriptions.Add(new SortDescription(nameof(ChamCong.GioVao), ListSortDirection.Descending));
         DanhSachChamCongView.SortDescriptions.Add(new SortDescription(nameof(ChamCong.NhanVien), ListSortDirection.Ascending));
         BaoThayDoi(nameof(DanhSachChamCongView));
-        DanhSachNghiPhepView = CollectionViewSource.GetDefaultView(DuLieu.NghiPhep);
-        DanhSachNghiPhepView.Filter = obj => obj is NghiPhep nghiPhep && LocNghiPhep(nghiPhep);
-        BaoThayDoi(nameof(DanhSachNghiPhepView));
+        CauHinhDanhSachNghiPhepView();
         DanhSachDanhGiaView = CollectionViewSource.GetDefaultView(DuLieu.DanhGia);
         DanhSachDanhGiaView.Filter = obj => obj is DanhGia danhGia && LocDanhGia(danhGia);
         DanhSachDanhGiaView.SortDescriptions.Clear();
@@ -626,7 +765,13 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         LamMoiThongBao();
         await TaiDanhSachTaiKhoan();
         TaoMoiNhanVien(khoiTaoNoiBo: true);
-        TaoMoiPhongBan();
+        PhongBanDangChon = coPhongBanCanGiu
+            ? ChonPhongBanTrongPhamVi(maPhongBanDangChon, tenPhongBanDangChon)
+            : null;
+        if (PhongBanDangChon is null)
+        {
+            TaoMoiPhongBan(khoiTaoNoiBo: true);
+        }
         KhoiTaoBieuMauNghiepVu();
         NhanVienDangChon = ChonNhanVienTrongPhamVi(maNhanVienDangChon, tenNhanVienDangChon);
     }
@@ -650,12 +795,36 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         BaoThayDoi(nameof(DanhSachNhanVienView));
     }
 
+    private void CauHinhDanhSachNghiPhepView()
+    {
+        DanhSachNghiPhepView = CollectionViewSource.GetDefaultView(DuLieu.NghiPhep);
+        DanhSachNghiPhepView.Filter = obj => obj is NghiPhep nghiPhep && LocNghiPhepTheoBoLocManHinh(nghiPhep);
+        DanhSachNghiPhepView.SortDescriptions.Clear();
+        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.ThuTuTrangThai), ListSortDirection.Ascending));
+        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.ThuTuMoiNhat), ListSortDirection.Descending));
+        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.TuNgay), ListSortDirection.Descending));
+        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.DenNgay), ListSortDirection.Descending));
+        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.NhanVien), ListSortDirection.Ascending));
+        BaoThayDoi(nameof(DanhSachNghiPhepView));
+    }
+
     private NhanVien? ChonNhanVienTrongPhamVi(int? maNhanVienDangChon = null, string? tenNhanVienDangChon = null)
     {
         var danhSach = NhanVienTrongPhamVi;
+        var danhSachDangLamViec = NhanVienDangLamViecTrongPhamVi;
         return danhSach.FirstOrDefault(n => n.MaNhanVien == maNhanVienDangChon)
             ?? danhSach.FirstOrDefault(n => string.Equals(n.HoTen, tenNhanVienDangChon, StringComparison.OrdinalIgnoreCase))
+            ?? danhSachDangLamViec.FirstOrDefault(n => string.Equals(n.HoTen, TenNguoiDung, StringComparison.OrdinalIgnoreCase))
             ?? danhSach.FirstOrDefault(n => string.Equals(n.HoTen, TenNguoiDung, StringComparison.OrdinalIgnoreCase))
+            ?? danhSachDangLamViec.FirstOrDefault()
+            ?? danhSach.FirstOrDefault();
+    }
+
+    private PhongBan? ChonPhongBanTrongPhamVi(int? maPhongBanDangChon = null, string? tenPhongBanDangChon = null)
+    {
+        var danhSach = PhongBanTrongPhamVi;
+        return danhSach.FirstOrDefault(p => p.MaPhongBan == maPhongBanDangChon)
+            ?? danhSach.FirstOrDefault(p => string.Equals(p.TenPhongBan, tenPhongBanDangChon, StringComparison.OrdinalIgnoreCase))
             ?? danhSach.FirstOrDefault();
     }
 
@@ -681,6 +850,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         ?? "Chưa xác định";
 
     private IEnumerable<NhanVien> LayNhanVienTrongPhamVi() => DuLieu.NhanVien.Where(CoTheXemNhanVien);
+
+    private IEnumerable<NhanVien> LayNhanVienDangLamViecTrongPhamVi() => LayNhanVienTrongPhamVi().Where(nhanVien => nhanVien.DangLamViec);
 
     private IEnumerable<NhanVien> SapXepNhanVienTheoUuTien(IEnumerable<NhanVien> danhSach)
     {
@@ -837,6 +1008,17 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private bool CoTheSuaNhanVienDangChon() => CoQuyenQuanLyHoSoNhanVien && CoTheThaoTacNhanVienDangChon();
 
+    private bool CoTheSuaPhongBanDangChon() => CoQuyenPhongBan && PhongBanDangChon is not null;
+
+    private bool CoTheLuuPhongBan() => CoQuyenPhongBan && !string.IsNullOrWhiteSpace(BieuMauPhongBan.TenPhongBan);
+
+    private bool CoTheGanTruongPhongDangChon()
+    {
+        return CoTheSuaPhongBanDangChon()
+            && BieuMauPhongBan.MaTruongPhong is int maTruongPhong
+            && NhanVienCoTheBoNhiemTruongPhong.Any(nhanVien => nhanVien.MaNhanVien == maTruongPhong);
+    }
+
     private bool LocNhanVien(object obj)
     {
         if (obj is not NhanVien nv)
@@ -854,6 +1036,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return false;
         }
 
+        if (!string.Equals(TrangThaiNhanVienDangChon, TatCaTrangThaiNhanVien, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(nv.TrangThai, TrangThaiNhanVienDangChon, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
         if (string.IsNullOrWhiteSpace(TuKhoaTimKiem))
         {
             return true;
@@ -864,11 +1052,17 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             || ChuaTuKhoa(nv.MaSo, tuKhoa)
             || ChuaTuKhoa(nv.PhongBan, tuKhoa)
             || ChuaTuKhoa(nv.ViTri, tuKhoa)
+            || ChuaTuKhoa(nv.TrangThai, tuKhoa)
             || ChuaTuKhoa(nv.CapBacChucVu, tuKhoa);
     }
 
     private bool LocPhieuLuong(PhieuLuong phieuLuong)
     {
+        if (phieuLuong.ThucLanh < 0)
+        {
+            return false;
+        }
+
         if (!CoTheXemTheoTen(phieuLuong.NhanVien))
         {
             return false;
@@ -946,6 +1140,30 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         return CoTheXemTheoTen(nghiPhep.NhanVien);
     }
 
+    private bool LocNghiPhepTheoBoLocManHinh(NghiPhep nghiPhep)
+    {
+        if (!LocNghiPhep(nghiPhep) || !NghiPhepThuocKy(nghiPhep, KyNghiPhepDangChon))
+        {
+            return false;
+        }
+
+        if (string.Equals(PhongBanNghiPhepDangChon, TatCaPhongBan, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var nhanVien = LayNhanVienTheoTen(nghiPhep.NhanVien);
+        return nhanVien is not null && ThuocPhongBan(nhanVien.PhongBan, PhongBanNghiPhepDangChon);
+    }
+
+    private bool CoTheXuLyNghiPhep(object? thamSo)
+    {
+        return thamSo is NghiPhep nghiPhep
+            && CoQuyenDuyetNghiPhep
+            && LocNghiPhep(nghiPhep)
+            && nghiPhep.DangChoDuyet;
+    }
+
     private bool LocDanhGia(DanhGia danhGia)
     {
         return CoTheXemTheoTen(danhGia.NhanVien) || CoTheXemTheoTen(danhGia.NguoiDanhGia);
@@ -959,8 +1177,18 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private bool ThuocKyBaoCao(DateTime ngay)
     {
+        return ThuocKy(ngay, KyBaoCaoNhanSuDangChon);
+    }
+
+    private (DateTime TuNgay, DateTime DenNgay)? LayKhoangKyBaoCao()
+    {
+        return LayKhoangKy(KyBaoCaoNhanSuDangChon);
+    }
+
+    private bool ThuocKy(DateTime ngay, string ky)
+    {
         var homNay = DateTime.Today;
-        return KyBaoCaoNhanSuDangChon switch
+        return ky switch
         {
             "Ngày hôm nay" => ngay.Date == homNay,
             "Tháng này" => ngay.Year == homNay.Year && ngay.Month == homNay.Month,
@@ -970,10 +1198,10 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         };
     }
 
-    private (DateTime TuNgay, DateTime DenNgay)? LayKhoangKyBaoCao()
+    private (DateTime TuNgay, DateTime DenNgay)? LayKhoangKy(string ky)
     {
         var homNay = DateTime.Today;
-        return KyBaoCaoNhanSuDangChon switch
+        return ky switch
         {
             "Ngày hôm nay" => (homNay, homNay),
             "Tháng này" => (new DateTime(homNay.Year, homNay.Month, 1), new DateTime(homNay.Year, homNay.Month, DateTime.DaysInMonth(homNay.Year, homNay.Month))),
@@ -985,7 +1213,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private bool NghiPhepThuocKyBaoCao(NghiPhep nghiPhep)
     {
-        var khoang = LayKhoangKyBaoCao();
+        return NghiPhepThuocKy(nghiPhep, KyBaoCaoNhanSuDangChon);
+    }
+
+    private bool NghiPhepThuocKy(NghiPhep nghiPhep, string ky)
+    {
+        var khoang = LayKhoangKy(ky);
         return khoang is null
             || QuyTacNghiepVuNhanSu.NghiPhepGiaoKhoang(nghiPhep, khoang.Value.TuNgay, khoang.Value.DenNgay);
     }
@@ -1152,17 +1385,58 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             .FirstOrDefault();
     }
 
+    private IEnumerable<PhieuLuong> LayBangLuongNhanVienHienThi()
+    {
+        return DuLieu.PhieuLuong
+            .Where(LocPhieuLuong)
+            .GroupBy(phieuLuong => phieuLuong.NhanVien, StringComparer.OrdinalIgnoreCase)
+            .Select(nhom => nhom
+                .OrderByDescending(phieuLuong => phieuLuong.KyLuong)
+                .ThenByDescending(phieuLuong => phieuLuong.ThucLanh)
+                .First())
+            .OrderBy(phieuLuong => LayNhanVienTheoTen(phieuLuong.NhanVien)?.ThuTuChucVu ?? 99)
+            .ThenBy(phieuLuong => LayNhanVienTheoTen(phieuLuong.NhanVien)?.PhongBan ?? "")
+            .ThenBy(phieuLuong => phieuLuong.NhanVien);
+    }
+
+    private PhieuLuong? LayPhieuLuongCaoNhat(IEnumerable<PhieuLuong> phieuLuongs)
+    {
+        return phieuLuongs
+            .Where(phieuLuong => phieuLuong.ThucLanh > 0)
+            .OrderByDescending(phieuLuong => phieuLuong.ThucLanh)
+            .ThenBy(phieuLuong => LayNhanVienTheoTen(phieuLuong.NhanVien)?.ThuTuChucVu ?? 99)
+            .ThenBy(phieuLuong => phieuLuong.NhanVien)
+            .FirstOrDefault();
+    }
+
     private static string TaoMoTaLuongCao(PhieuLuong? phieuLuong)
     {
-        return phieuLuong is null ? "Chưa có bảng lương" : $"{phieuLuong.NhanVien} - {phieuLuong.ThucLanh:N0} đ";
+        return phieuLuong is null || phieuLuong.ThucLanh <= 0
+            ? "Chưa có bảng lương"
+            : $"{phieuLuong.NhanVien}: {phieuLuong.ThucLanh:N0} đ";
+    }
+
+    private void ChuanHoaPhieuLuongAm()
+    {
+        for (var i = 0; i < DuLieu.PhieuLuong.Count; i++)
+        {
+            var phieuLuong = DuLieu.PhieuLuong[i];
+            if (phieuLuong.ThucLanh < 0)
+            {
+                DuLieu.PhieuLuong[i] = phieuLuong with { ThucLanh = 0 };
+            }
+        }
     }
 
     private void LamMoiBoLocNhanVien()
     {
         DanhSachNhanVienView.Refresh();
         BaoThayDoi(nameof(NhanVienTrongPhamVi));
+        BaoThayDoi(nameof(NhanVienDangLamViecTrongPhamVi));
+        BaoThayDoi(nameof(NhanVienCoTheBoNhiemTruongPhong));
         BaoThayDoi(nameof(PhongBanTrongPhamVi));
         BaoThayDoi(nameof(ViTriTrongPhamVi));
+        BaoThayDoi(nameof(ViTriTheoPhongBanBieuMauNhanVien));
         BaoThayDoi(nameof(PhamViDuLieuHienThi));
         BaoThayDoi(nameof(NhanSuConHieuLuc));
         BaoThayDoi(nameof(NghiPhepDaDuyetHomNay));
@@ -1179,9 +1453,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private void LamMoiBoLocBangLuong()
     {
         DanhSachPhieuLuongView.Refresh();
+        BaoThayDoi(nameof(BangLuongNhanVienHienThi));
         BaoThayDoi(nameof(SoPhieuLuongDaLoc));
         BaoThayDoi(nameof(TongThucLanhDaLoc));
         BaoThayDoi(nameof(LuongCaoBangLuongHienThi));
+        (XemPhieuLuongLenh as LenhGiaoDien)?.LamMoi();
+        (XacNhanTraLuongLenh as LenhGiaoDien)?.LamMoi();
     }
 
     private void LamMoiBoLocChamCong()
@@ -1215,6 +1492,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private void LamMoiBoLocNghiPhep()
     {
         DanhSachNghiPhepView.Refresh();
+        LamMoiLenhNghiPhep();
+        BaoThayDoi(nameof(SoNghiPhepDaLoc));
+        BaoThayDoi(nameof(SoNghiPhepChoDuyetDaLoc));
+        BaoThayDoi(nameof(SoNghiPhepDaDuyetDaLoc));
+        BaoThayDoi(nameof(SoNgayNghiPhepDaLoc));
+        BaoThayDoi(nameof(MoTaBoLocNghiPhep));
         BaoThayDoi(nameof(NghiChoDuyet));
         BaoThayDoi(nameof(SoNghiPhepTrongKyBaoCao));
         BaoThayDoi(nameof(NhanSuNghiDaDuyetTrongKyBaoCao));
@@ -1242,6 +1525,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private void LamMoiBoLocUngVien()
     {
         DanhSachUngVienView.Refresh();
+        (TaoMoiUngVienLenh as LenhGiaoDien)?.LamMoi();
+        (SuaUngVienLenh as LenhGiaoDien)?.LamMoi();
+        (TaoUngVienLenh as LenhGiaoDien)?.LamMoi();
+        (ChuyenUngVienThanhNhanVienLenh as LenhGiaoDien)?.LamMoi();
+        (ChuyenGiaiDoanUngVienLenh as LenhGiaoDien)?.LamMoi();
+        (XuatHopDongLamViecLenh as LenhGiaoDien)?.LamMoi();
         BaoThayDoi(nameof(DuLieuUngVienTheoViTri));
     }
 
@@ -1322,10 +1611,21 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             MaViTri = viTri?.MaViTri ?? 1,
             ViTri = viTri?.TenViTri ?? ""
         };
+
+        if (!khoiTaoNoiBo)
+        {
+            TabNhanVienDangChon = 1;
+        }
     }
 
-    private void TaoMoiPhongBan()
+    private void TaoMoiPhongBan(bool khoiTaoNoiBo = false)
     {
+        if (!khoiTaoNoiBo && !CoQuyenPhongBan)
+        {
+            MessageBox.Show("Tài khoản hiện tại không có quyền quản lý phòng ban.", "Phân quyền", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         BieuMauPhongBan = new BieuMauPhongBan
         {
             TenPhongBan = "",
@@ -1342,7 +1642,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             HoTen = "",
             Email = "",
             DienThoai = "",
-            MaViTri = viTri?.MaViTri ?? 1
+            MaViTri = viTri?.MaViTri ?? 1,
+            GiaiDoan = "Mới"
         };
         BieuMauNghiPhep = new BieuMauNghiPhep
         {
@@ -1358,6 +1659,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     {
         if (NhanVienDangChon is null) return;
         BieuMauNhanVien = NhanVienDangChon.TaoBanSao();
+        TabNhanVienDangChon = 1;
     }
 
     private void TaoMoiDanhGia(bool khoiTaoNoiBo = false)
@@ -1418,6 +1720,18 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
         var phongBan = DuLieu.PhongBan.FirstOrDefault(p => p.MaPhongBan == BieuMauNhanVien.MaPhongBan);
         var viTri = DuLieu.ViTri.FirstOrDefault(v => v.MaViTri == BieuMauNhanVien.MaViTri);
+        if (phongBan is null)
+        {
+            MessageBox.Show("Vui lòng chọn phòng ban hợp lệ cho nhân viên.", "Thiếu thông tin", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (viTri is null || viTri.MaPhongBan != phongBan.MaPhongBan)
+        {
+            MessageBox.Show("Vui lòng chọn vị trí thuộc đúng phòng ban đang chọn.", "Dữ liệu chưa hợp lệ", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         BieuMauNhanVien.PhongBan = phongBan?.TenPhongBan ?? "";
         BieuMauNhanVien.ViTri = viTri?.TenViTri ?? "";
 
@@ -1467,6 +1781,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 banDaLuu = nhanVienCu;
             }
 
+            ApDungQuyTacChucVuNhanVienCucBo(banDaLuu);
             NhanVienDangChon = banDaLuu;
             BieuMauNhanVien = banDaLuu.TaoBanSao();
             DanhSachNhanVienView.Refresh();
@@ -1489,36 +1804,77 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return;
         }
 
-        if (MessageBox.Show($"Xóa nhân viên {NhanVienDangChon.HoTen}?", "Xác nhận", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (!NhanVienDangChon.DangLamViec)
+        {
+            MessageBox.Show($"{NhanVienDangChon.HoTen} đã ở trạng thái nghỉ việc.", "Nghỉ việc", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (MessageBox.Show($"Cho nhân viên {NhanVienDangChon.HoTen} nghỉ việc? Hồ sơ và dữ liệu lịch sử vẫn được lưu lại.", "Xác nhận", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
 
         try
         {
-            var tenNhanVien = NhanVienDangChon.HoTen;
+            var nhanVienNghiViec = NhanVienDangChon;
+            var tenNhanVien = nhanVienNghiViec.HoTen;
             if (NguonDuLieu.StartsWith("SQL Server", StringComparison.OrdinalIgnoreCase))
             {
-                await khoDuLieu.XoaNhanVienAsync(NhanVienDangChon.MaNhanVien);
+                await khoDuLieu.ChoNhanVienNghiViecAsync(nhanVienNghiViec.MaNhanVien);
                 await TaiDuLieu();
-                BaoDaXong("Xóa hồ sơ nhân viên", $"Đã xóa hồ sơ {tenNhanVien}.", "Nhân viên");
+                BaoDaXong("Cho nhân viên nghỉ việc", $"Đã lưu hồ sơ {tenNhanVien} ở trạng thái nghỉ việc.", "Nhân viên");
                 return;
             }
 
-            DuLieu.NhanVien.Remove(NhanVienDangChon);
+            nhanVienNghiViec.DangLamViec = false;
             CapNhatPhongBanSauKhiXoaNhanVien(tenNhanVien);
-            XoaDuLieuLienQuanNhanVien(tenNhanVien);
-            NhanVienDangChon = null;
-            TaoMoiNhanVien();
+            NhanVienDangChon = nhanVienNghiViec;
+            BieuMauNhanVien = nhanVienNghiViec.TaoBanSao();
             DanhSachNhanVienView.Refresh();
             BaoCaoThongKe();
             LamMoiThongBao();
-            BaoDaXong("Xóa hồ sơ nhân viên", $"Đã xóa hồ sơ {tenNhanVien}.", "Nhân viên");
+            BaoDaXong("Cho nhân viên nghỉ việc", $"Đã lưu hồ sơ {tenNhanVien} ở trạng thái nghỉ việc.", "Nhân viên");
         }
         catch (Exception loi)
         {
-            MessageBox.Show($"Không thể xóa nhân viên: {loi.Message}", "Lỗi dữ liệu", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Không thể cho nhân viên nghỉ việc: {loi.Message}", "Lỗi dữ liệu", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
-    private async Task TaoUngVien()
+    private void TaoMoiUngVien()
+    {
+        var viTri = ViTriTrongPhamVi.FirstOrDefault() ?? DuLieu.ViTri.FirstOrDefault();
+        BieuMauUngVien = new BieuMauUngVien
+        {
+            MaUngVien = 0,
+            HoTen = "",
+            Email = "",
+            DienThoai = "",
+            MaViTri = viTri?.MaViTri ?? 1,
+            GiaiDoan = "Mới"
+        };
+    }
+
+    private void DuaUngVienVaoBieuMau()
+    {
+        if (UngVienDangChon is null)
+        {
+            return;
+        }
+
+        var viTri = DuLieu.ViTri.FirstOrDefault(x => string.Equals(x.TenViTri, UngVienDangChon.ViTri, StringComparison.OrdinalIgnoreCase))
+            ?? ViTriTrongPhamVi.FirstOrDefault()
+            ?? DuLieu.ViTri.FirstOrDefault();
+        BieuMauUngVien = new BieuMauUngVien
+        {
+            MaUngVien = UngVienDangChon.MaUngVien,
+            HoTen = UngVienDangChon.HoTen,
+            Email = UngVienDangChon.Email,
+            DienThoai = UngVienDangChon.DienThoai,
+            MaViTri = viTri?.MaViTri ?? 1,
+            GiaiDoan = UngVienDangChon.GiaiDoan
+        };
+    }
+
+    private async Task LuuUngVien()
     {
         if (string.IsNullOrWhiteSpace(BieuMauUngVien.HoTen) || string.IsNullOrWhiteSpace(BieuMauUngVien.Email))
         {
@@ -1534,27 +1890,73 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return;
         }
 
-        if (DuLieu.NhanVien.Any(nhanVien => string.Equals(nhanVien.HoTen.Trim(), BieuMauUngVien.HoTen.Trim(), StringComparison.OrdinalIgnoreCase)))
+        if (DuLieu.NhanVien.Any(nhanVien => nhanVien.DangLamViec && string.Equals(nhanVien.HoTen.Trim(), BieuMauUngVien.HoTen.Trim(), StringComparison.OrdinalIgnoreCase)))
         {
             MessageBox.Show("Người này đã có trong danh sách nhân viên. Khi cần tuyển mới, hãy tạo ứng viên khác và cập nhật giai đoạn tuyển dụng.", "Ứng viên đã là nhân viên", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
+        var maUngVienDaLuu = BieuMauUngVien.MaUngVien;
+        var laThemMoi = maUngVienDaLuu == 0;
+        var hoTenDaLuu = BieuMauUngVien.HoTen.Trim();
+        var emailDaLuu = BieuMauUngVien.Email.Trim();
+        var dienThoaiDaLuu = BieuMauUngVien.DienThoai.Trim();
+        var giaiDoanDaLuu = string.IsNullOrWhiteSpace(BieuMauUngVien.GiaiDoan) ? "Mới" : BieuMauUngVien.GiaiDoan.Trim();
+
         await ChayLenhDuLieu(async () =>
         {
-            if (DangDungSql) await khoDuLieu.ThemUngVienAsync(BieuMauUngVien);
+            if (DangDungSql) await khoDuLieu.LuuUngVienAsync(BieuMauUngVien);
             else
             {
                 var viTri = viTriTuyen?.TenViTri ?? "";
-                DuLieu.UngVien.Insert(0, new UngVien(BieuMauUngVien.HoTen, viTri, BieuMauUngVien.Email, BieuMauUngVien.DienThoai, "Mới"));
+                if (BieuMauUngVien.MaUngVien > 0)
+                {
+                    var ungVienCu = DuLieu.UngVien.FirstOrDefault(x => x.MaUngVien == BieuMauUngVien.MaUngVien);
+                    var viTriUngVien = ungVienCu is null ? -1 : DuLieu.UngVien.IndexOf(ungVienCu);
+                    var ungVienDaSua = new UngVien(hoTenDaLuu, viTri, emailDaLuu, dienThoaiDaLuu, giaiDoanDaLuu, BieuMauUngVien.MaUngVien);
+                    if (viTriUngVien >= 0)
+                    {
+                        DuLieu.UngVien[viTriUngVien] = ungVienDaSua;
+                        UngVienDangChon = ungVienDaSua;
+                    }
+                }
+                else
+                {
+                    var maUngVienMoi = DuLieu.UngVien.Count == 0 ? 1 : DuLieu.UngVien.Max(x => x.MaUngVien) + 1;
+                    var ungVienMoi = new UngVien(hoTenDaLuu, viTri, emailDaLuu, dienThoaiDaLuu, giaiDoanDaLuu, maUngVienMoi);
+                    DuLieu.UngVien.Insert(0, ungVienMoi);
+                    UngVienDangChon = ungVienMoi;
+                    BieuMauUngVien.MaUngVien = maUngVienMoi;
+                }
             }
 
-            ThemThongBao("Ứng viên mới", $"Đã thêm ứng viên {BieuMauUngVien.HoTen}.", "Tuyển dụng");
+            if (DangDungSql)
+            {
+                await TaiDuLieu();
+                UngVienDangChon = DuLieu.UngVien
+                    .FirstOrDefault(x => maUngVienDaLuu > 0 && x.MaUngVien == maUngVienDaLuu)
+                    ?? DuLieu.UngVien.FirstOrDefault(x => string.Equals(x.Email, emailDaLuu, StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(x.HoTen, hoTenDaLuu, StringComparison.OrdinalIgnoreCase));
+                if (UngVienDangChon is not null)
+                {
+                    DuaUngVienVaoBieuMau();
+                }
+            }
+
+            DanhSachUngVienView.Refresh();
+            LamMoiBoLocUngVien();
+            ThemThongBao(laThemMoi ? "Ứng viên mới" : "Cập nhật ứng viên", $"Đã {(laThemMoi ? "thêm" : "cập nhật")} ứng viên {hoTenDaLuu}.", "Tuyển dụng");
         });
     }
 
     private void DuaPhongBanVaoBieuMau()
     {
+        if (!CoQuyenPhongBan)
+        {
+            MessageBox.Show("Tài khoản hiện tại không có quyền quản lý phòng ban.", "Phân quyền", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         if (PhongBanDangChon is null) return;
         var truongPhong = DuLieu.NhanVien.FirstOrDefault(x => x.HoTen == PhongBanDangChon.TruongPhong);
         BieuMauPhongBan = new BieuMauPhongBan
@@ -1572,8 +1974,9 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return;
         }
 
-        var phongBan = DuLieu.PhongBan.FirstOrDefault(p =>
-            p.TenPhongBan.Equals(tongHop.TenPhongBan, StringComparison.OrdinalIgnoreCase));
+        var phongBan = DuLieu.PhongBan.FirstOrDefault(p => p.MaPhongBan == tongHop.MaPhongBan)
+            ?? DuLieu.PhongBan.FirstOrDefault(p =>
+                p.TenPhongBan.Equals(tongHop.TenPhongBan, StringComparison.OrdinalIgnoreCase));
         if (phongBan is not null && !Equals(PhongBanDangChon, phongBan))
         {
             PhongBanDangChon = phongBan;
@@ -1584,7 +1987,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     {
         var dongTongHop = PhongBanDangChon is null
             ? null
-            : TongHopPhongBanDieuHanh.FirstOrDefault(x =>
+            : TongHopPhongBanDieuHanh.FirstOrDefault(x => x.MaPhongBan == PhongBanDangChon.MaPhongBan)
+              ?? TongHopPhongBanDieuHanh.FirstOrDefault(x =>
                 x.TenPhongBan.Equals(PhongBanDangChon.TenPhongBan, StringComparison.OrdinalIgnoreCase));
 
         if (!Equals(tongHopPhongBanDangChon, dongTongHop))
@@ -1596,6 +2000,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private async Task LuuPhongBan()
     {
+        if (!CoQuyenPhongBan)
+        {
+            MessageBox.Show("Tài khoản hiện tại không có quyền quản lý phòng ban.", "Phân quyền", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(BieuMauPhongBan.TenPhongBan))
         {
             MessageBox.Show("Vui lòng nhập tên phòng ban.", "Thiếu thông tin", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -1614,7 +2024,22 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         {
             var laThemMoi = BieuMauPhongBan.MaPhongBan == 0 || DuLieu.PhongBan.All(p => p.MaPhongBan != BieuMauPhongBan.MaPhongBan);
             var tenPhongBan = BieuMauPhongBan.TenPhongBan.Trim();
-            var truongPhong = DuLieu.NhanVien.FirstOrDefault(x => x.MaNhanVien == BieuMauPhongBan.MaTruongPhong)?.HoTen ?? "Chưa phân công";
+            NhanVien? truongPhongDuocChon = null;
+            if (BieuMauPhongBan.MaTruongPhong is int maTruongPhong)
+            {
+                truongPhongDuocChon = DuLieu.NhanVien.FirstOrDefault(x => x.MaNhanVien == maTruongPhong);
+                if (truongPhongDuocChon is null)
+                {
+                    MessageBox.Show("Nhân viên được chọn làm trưởng phòng không còn tồn tại.", "Phòng ban", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!truongPhongDuocChon.DangLamViec)
+                {
+                    MessageBox.Show("Không thể bổ nhiệm nhân viên đã nghỉ việc làm trưởng phòng.", "Phòng ban", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
 
             if (DangDungSql)
             {
@@ -1627,17 +2052,39 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
             PhongBan phongBanDaLuu;
             var phongBanCu = DuLieu.PhongBan.FirstOrDefault(p => p.MaPhongBan == BieuMauPhongBan.MaPhongBan);
+            var truongPhongCu = phongBanCu?.TruongPhong ?? "Chưa phân công";
             if (phongBanCu is null)
             {
-                phongBanDaLuu = new PhongBan(DuLieu.PhongBan.Count == 0 ? 1 : DuLieu.PhongBan.Max(x => x.MaPhongBan) + 1, tenPhongBan, truongPhong);
+                phongBanDaLuu = new PhongBan(DuLieu.PhongBan.Count == 0 ? 1 : DuLieu.PhongBan.Max(x => x.MaPhongBan) + 1, tenPhongBan, "Chưa phân công");
                 DuLieu.PhongBan.Add(phongBanDaLuu);
             }
             else
             {
                 var viTri = DuLieu.PhongBan.IndexOf(phongBanCu);
-                phongBanDaLuu = phongBanCu with { TenPhongBan = tenPhongBan, TruongPhong = truongPhong };
+                phongBanDaLuu = phongBanCu with { TenPhongBan = tenPhongBan };
                 DuLieu.PhongBan[viTri] = phongBanDaLuu;
                 CapNhatTenPhongBanNhanVien(phongBanDaLuu.MaPhongBan, tenPhongBan);
+            }
+
+            if (truongPhongDuocChon is not null)
+            {
+                CapNhatChucVuTruongPhongCucBo(phongBanDaLuu with { TruongPhong = truongPhongCu }, truongPhongDuocChon);
+                var viTri = DuLieu.PhongBan.IndexOf(phongBanDaLuu);
+                phongBanDaLuu = phongBanDaLuu with { TruongPhong = truongPhongDuocChon.HoTen };
+                if (viTri >= 0)
+                {
+                    DuLieu.PhongBan[viTri] = phongBanDaLuu;
+                }
+            }
+            else
+            {
+                GoVaiTroTruongPhongCucBo(phongBanDaLuu, truongPhongCu);
+                var viTri = DuLieu.PhongBan.IndexOf(phongBanDaLuu);
+                phongBanDaLuu = phongBanDaLuu with { TruongPhong = "Chưa phân công" };
+                if (viTri >= 0)
+                {
+                    DuLieu.PhongBan[viTri] = phongBanDaLuu;
+                }
             }
 
             PhongBanDangChon = phongBanDaLuu;
@@ -1660,6 +2107,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private async Task XoaPhongBan()
     {
+        if (!CoQuyenPhongBan)
+        {
+            MessageBox.Show("Tài khoản hiện tại không có quyền quản lý phòng ban.", "Phân quyền", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         if (PhongBanDangChon is null) return;
         var soNhanVien = DuLieu.NhanVien.Count(n => n.MaPhongBan == PhongBanDangChon.MaPhongBan);
         if (soNhanVien > 0)
@@ -1697,14 +2150,29 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private async Task GanTruongPhong()
     {
+        if (!CoQuyenPhongBan)
+        {
+            MessageBox.Show("Tài khoản hiện tại không có quyền quản lý phòng ban.", "Phân quyền", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         if (PhongBanDangChon is null) return;
-        var truongPhong = DuLieu.NhanVien.FirstOrDefault(x => x.MaNhanVien == BieuMauPhongBan.MaTruongPhong)
-            ?? NhanVienDangChon
-            ?? DuLieu.NhanVien.FirstOrDefault(x => x.MaPhongBan == PhongBanDangChon.MaPhongBan)
-            ?? DuLieu.NhanVien.FirstOrDefault();
+        if (BieuMauPhongBan.MaTruongPhong is not int maTruongPhong)
+        {
+            MessageBox.Show("Vui lòng chọn trưởng phòng trong phiếu phòng ban trước khi gán.", "Gán trưởng phòng", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var truongPhong = DuLieu.NhanVien.FirstOrDefault(x => x.MaNhanVien == maTruongPhong);
         if (truongPhong is null)
         {
-            MessageBox.Show("Chưa có nhân viên để gán làm trưởng phòng.", "Gán trưởng phòng", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Nhân viên được chọn không còn tồn tại trong danh sách.", "Gán trưởng phòng", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (!truongPhong.DangLamViec)
+        {
+            MessageBox.Show("Không thể bổ nhiệm nhân viên đã nghỉ việc làm trưởng phòng.", "Gán trưởng phòng", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -1713,6 +2181,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             if (DangDungSql) await khoDuLieu.GanTruongPhongAsync(PhongBanDangChon.MaPhongBan, truongPhong.MaNhanVien);
             else
             {
+                CapNhatChucVuTruongPhongCucBo(PhongBanDangChon, truongPhong);
                 var viTri = DuLieu.PhongBan.IndexOf(PhongBanDangChon);
                 if (viTri >= 0)
                 {
@@ -1730,6 +2199,147 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             BaoCaoThongKe();
             BaoDaXong("Cập nhật trưởng phòng", $"{truongPhong.HoTen} đã được phân công phụ trách {PhongBanDangChon.TenPhongBan}.", "Phòng ban");
         });
+    }
+
+    private void CapNhatChucVuTruongPhongCucBo(PhongBan phongBan, NhanVien truongPhongMoi)
+    {
+        if (!truongPhongMoi.DangLamViec)
+        {
+            return;
+        }
+
+        var truongPhongCu = DuLieu.NhanVien.FirstOrDefault(nhanVien =>
+            string.Equals(nhanVien.HoTen, phongBan.TruongPhong, StringComparison.OrdinalIgnoreCase));
+        var viTriTruongPhong = LayHoacTaoViTriTruongPhong(phongBan);
+        var viTriNhanVien = LayHoacTaoViTriNhanVien(phongBan);
+
+        foreach (var phongBanKhac in DuLieu.PhongBan.Where(x =>
+                     x.MaPhongBan != phongBan.MaPhongBan
+                     && string.Equals(x.TruongPhong, truongPhongMoi.HoTen, StringComparison.OrdinalIgnoreCase)).ToList())
+        {
+            var viTriPhongBanKhac = DuLieu.PhongBan.IndexOf(phongBanKhac);
+            if (viTriPhongBanKhac >= 0)
+            {
+                DuLieu.PhongBan[viTriPhongBanKhac] = phongBanKhac with { TruongPhong = "Chưa phân công" };
+            }
+        }
+
+        if (truongPhongCu is not null && truongPhongCu.MaNhanVien != truongPhongMoi.MaNhanVien)
+        {
+            truongPhongCu.MaPhongBan = phongBan.MaPhongBan;
+            truongPhongCu.PhongBan = phongBan.TenPhongBan;
+            truongPhongCu.MaViTri = viTriNhanVien.MaViTri;
+            truongPhongCu.ViTri = viTriNhanVien.TenViTri;
+        }
+
+        truongPhongMoi.MaPhongBan = phongBan.MaPhongBan;
+        truongPhongMoi.PhongBan = phongBan.TenPhongBan;
+        truongPhongMoi.MaViTri = viTriTruongPhong.MaViTri;
+        truongPhongMoi.ViTri = viTriTruongPhong.TenViTri;
+        DanhSachNhanVienView.Refresh();
+        BaoThayDoi(nameof(NhanVienTrongPhamVi));
+        BaoThayDoi(nameof(NhanVienDangLamViecTrongPhamVi));
+        BaoThayDoi(nameof(NhanVienCoTheBoNhiemTruongPhong));
+        BaoThayDoi(nameof(PhongBanTrongPhamVi));
+        BaoThayDoi(nameof(ViTriTrongPhamVi));
+        BaoThayDoi(nameof(ViTriTheoPhongBanBieuMauNhanVien));
+    }
+
+    private void GoVaiTroTruongPhongCucBo(PhongBan phongBan, string hoTenTruongPhong)
+    {
+        if (string.IsNullOrWhiteSpace(hoTenTruongPhong)
+            || hoTenTruongPhong.Contains("Chưa phân công", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var truongPhongCu = DuLieu.NhanVien.FirstOrDefault(nhanVien =>
+            string.Equals(nhanVien.HoTen, hoTenTruongPhong, StringComparison.OrdinalIgnoreCase));
+        if (truongPhongCu?.DangLamViec == true)
+        {
+            var viTriNhanVien = LayHoacTaoViTriNhanVien(phongBan);
+            truongPhongCu.MaPhongBan = phongBan.MaPhongBan;
+            truongPhongCu.PhongBan = phongBan.TenPhongBan;
+            truongPhongCu.MaViTri = viTriNhanVien.MaViTri;
+            truongPhongCu.ViTri = viTriNhanVien.TenViTri;
+        }
+
+        DanhSachNhanVienView.Refresh();
+        BaoThayDoi(nameof(NhanVienTrongPhamVi));
+        BaoThayDoi(nameof(NhanVienDangLamViecTrongPhamVi));
+        BaoThayDoi(nameof(NhanVienCoTheBoNhiemTruongPhong));
+        BaoThayDoi(nameof(PhongBanTrongPhamVi));
+        BaoThayDoi(nameof(ViTriTrongPhamVi));
+        BaoThayDoi(nameof(ViTriTheoPhongBanBieuMauNhanVien));
+    }
+
+    private void ApDungQuyTacChucVuNhanVienCucBo(NhanVien nhanVien)
+    {
+        var phongBan = DuLieu.PhongBan.FirstOrDefault(x => x.MaPhongBan == nhanVien.MaPhongBan);
+        var viTri = DuLieu.ViTri.FirstOrDefault(x => x.MaViTri == nhanVien.MaViTri);
+        if (phongBan is null || viTri is null)
+        {
+            return;
+        }
+
+        if (nhanVien.DangLamViec && BangXepHangChucVu.LayThuTu(viTri.TenViTri) == 3)
+        {
+            CapNhatChucVuTruongPhongCucBo(phongBan, nhanVien);
+            return;
+        }
+
+        for (var i = 0; i < DuLieu.PhongBan.Count; i++)
+        {
+            if (string.Equals(DuLieu.PhongBan[i].TruongPhong, nhanVien.HoTen, StringComparison.OrdinalIgnoreCase))
+            {
+                DuLieu.PhongBan[i] = DuLieu.PhongBan[i] with { TruongPhong = "Chưa phân công" };
+            }
+        }
+
+        BaoThayDoi(nameof(PhongBanTrongPhamVi));
+        BaoThayDoi(nameof(NhanVienDangLamViecTrongPhamVi));
+        BaoThayDoi(nameof(NhanVienCoTheBoNhiemTruongPhong));
+    }
+
+    private ViTriCongViec LayHoacTaoViTriTruongPhong(PhongBan phongBan)
+    {
+        return DuLieu.ViTri.FirstOrDefault(viTri =>
+                   viTri.MaPhongBan == phongBan.MaPhongBan
+                   && viTri.TenViTri.Contains("Trưởng phòng", StringComparison.OrdinalIgnoreCase))
+               ?? TaoViTriPhongBan(phongBan, $"Trưởng phòng {LayTenDonVi(phongBan.TenPhongBan)}");
+    }
+
+    private ViTriCongViec LayHoacTaoViTriNhanVien(PhongBan phongBan)
+    {
+        return DuLieu.ViTri
+                   .Where(viTri =>
+                       viTri.MaPhongBan == phongBan.MaPhongBan
+                       && !viTri.TenViTri.Contains("Trưởng phòng", StringComparison.OrdinalIgnoreCase))
+                   .OrderBy(viTri => viTri.TenViTri.Contains("Nhân viên", StringComparison.OrdinalIgnoreCase) ? 0 :
+                       viTri.TenViTri.Contains("Chuyên viên", StringComparison.OrdinalIgnoreCase) ? 1 : 2)
+                   .ThenBy(viTri => viTri.MaViTri)
+                   .FirstOrDefault()
+               ?? TaoViTriPhongBan(phongBan, $"Nhân viên {LayTenDonVi(phongBan.TenPhongBan)}");
+    }
+
+    private ViTriCongViec TaoViTriPhongBan(PhongBan phongBan, string tenViTri)
+    {
+        var viTri = new ViTriCongViec(
+            DuLieu.ViTri.Count == 0 ? 1 : DuLieu.ViTri.Max(x => x.MaViTri) + 1,
+            phongBan.MaPhongBan,
+            tenViTri,
+            0,
+            "Đang tuyển");
+        DuLieu.ViTri.Add(viTri);
+        return viTri;
+    }
+
+    private static string LayTenDonVi(string tenPhongBan)
+    {
+        const string tienToPhong = "Phòng ";
+        return tenPhongBan.StartsWith(tienToPhong, StringComparison.OrdinalIgnoreCase)
+            ? tenPhongBan[tienToPhong.Length..].Trim()
+            : tenPhongBan.Trim();
     }
 
     private async Task ChuyenUngVienThanhNhanVien()
@@ -1823,7 +2433,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 }
             }
 
-            ThemThongBao("Cập nhật tuyển dụng", $"Ứng viên đã chuyển từ {giaiDoanCu} sang {giaiDoanMoi}.", "Tuyển dụng");
+            ThemThongBao("Cập nhật tuyển dụng", $"{UngVienDangChon.HoTen} đã chuyển từ {giaiDoanCu} sang {giaiDoanMoi}.", "Tuyển dụng");
         });
     }
 
@@ -1858,6 +2468,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return;
         }
 
+        if (!NhanVienDangChon.DangLamViec)
+        {
+            MessageBox.Show("Nhân viên đã nghỉ việc không thể vào ca mới.", "Chấm công", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         await ChayLenhDuLieu(async () =>
         {
             if (DangDungSql) await khoDuLieu.GhiNhanVaoCaAsync(NhanVienDangChon.MaNhanVien);
@@ -1884,6 +2500,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         if (!CoTheThaoTacNhanVienDangChon())
         {
             MessageBox.Show("Bạn không có quyền chấm công cho nhân viên ngoài phạm vi được phân công.", "Phân quyền chấm công", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!NhanVienDangChon.DangLamViec)
+        {
+            MessageBox.Show("Nhân viên đã nghỉ việc không thể ghi nhận ra ca mới.", "Chấm công", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -1954,6 +2576,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return;
         }
 
+        if (!nhanVienNghi.DangLamViec)
+        {
+            MessageBox.Show("Nhân viên đã nghỉ việc không thể tạo đơn nghỉ mới.", "Nghỉ phép", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(BieuMauNghiPhep.LoaiNghi))
         {
             MessageBox.Show("Vui lòng nhập loại nghỉ.", "Nghỉ phép", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -1966,30 +2594,61 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return;
         }
 
+        var loaiNghi = BieuMauNghiPhep.LoaiNghi.Trim();
+        var tuNgay = BieuMauNghiPhep.TuNgay.Date;
+        var denNgay = BieuMauNghiPhep.DenNgay.Date;
+
         await ChayLenhDuLieu(async () =>
         {
             if (DangDungSql) await khoDuLieu.ThemNghiPhepAsync(BieuMauNghiPhep);
             else
             {
-                var soNgay = QuyTacNghiepVuNhanSu.TinhSoNgayBaoGom(BieuMauNghiPhep.TuNgay, BieuMauNghiPhep.DenNgay);
-                DuLieu.NghiPhep.Insert(0, new NghiPhep(nhanVienNghi.HoTen, BieuMauNghiPhep.LoaiNghi, BieuMauNghiPhep.TuNgay, BieuMauNghiPhep.DenNgay, soNgay, "Chờ duyệt"));
+                var soNgay = QuyTacNghiepVuNhanSu.TinhSoNgayBaoGom(tuNgay, denNgay);
+                var maDonMoi = DuLieu.NghiPhep.Count == 0 ? 1 : DuLieu.NghiPhep.Max(x => x.MaDon) + 1;
+                var donNghiMoi = new NghiPhep(nhanVienNghi.HoTen, loaiNghi, tuNgay, denNgay, soNgay, "Chờ duyệt", maDonMoi);
+                DuLieu.NghiPhep.Insert(0, donNghiMoi);
+                NghiPhepDangChon = donNghiMoi;
             }
 
-            ThemThongBao("Đơn nghỉ phép mới", "Đã tạo đơn nghỉ phép chờ duyệt.", "Nghỉ phép");
+            ThemThongBao("Đơn nghỉ phép mới", $"{nhanVienNghi.HoTen} đã gửi đơn {loaiNghi} từ {tuNgay:dd/MM/yyyy} đến {denNgay:dd/MM/yyyy}, đang chờ duyệt.", "Nghỉ phép");
         });
+
+        MucDangChon = "Nghỉ phép";
+        NghiPhepDangChon = DuLieu.NghiPhep
+            .Where(x => string.Equals(x.NhanVien, nhanVienNghi.HoTen, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.LoaiNghi, loaiNghi, StringComparison.OrdinalIgnoreCase)
+                && x.TuNgay.Date == tuNgay
+                && x.DenNgay.Date == denNgay)
+            .OrderByDescending(x => x.ThuTuMoiNhat)
+            .FirstOrDefault()
+            ?? NghiPhepDangChon;
+    }
+
+    private async Task CapNhatNghiPhepTuDong(object? thamSo, string trangThai)
+    {
+        if (thamSo is not NghiPhep nghiPhep)
+        {
+            return;
+        }
+
+        NghiPhepDangChon = nghiPhep;
+        await CapNhatNghiPhep(trangThai);
     }
 
     private async Task CapNhatNghiPhep(string trangThai)
     {
         if (NghiPhepDangChon is null) return;
-        if (!CoQuyenDuyetNghiPhep || !LocNghiPhep(NghiPhepDangChon))
+        if (!CoTheXuLyNghiPhep(NghiPhepDangChon))
         {
             MessageBox.Show("Bạn không có quyền duyệt đơn nghỉ ngoài phạm vi được phân công.", "Phân quyền nghỉ phép", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         var donNghiDangChon = NghiPhepDangChon;
+        var lyDoXuLy = TaoLyDoXuLyNghiPhep(donNghiDangChon.LyDoXuLy, trangThai);
+        donNghiDangChon.LyDoXuLy = lyDoXuLy;
         var donNghiSauCapNhat = donNghiDangChon with { TrangThai = trangThai };
+        donNghiSauCapNhat.LyDoXuLy = lyDoXuLy;
         var ghiChuTongQuan = TaoGhiChuTongQuanSauDuyetNghi(donNghiSauCapNhat);
 
         await ChayLenhDuLieu(async () =>
@@ -2030,8 +2689,20 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                     }
                 }
             }
-            ThemThongBao("Cập nhật nghỉ phép", $"Đơn nghỉ của {donNghiDangChon.NhanVien} đã chuyển sang {trangThai}. {ghiChuTongQuan}", "Nghỉ phép");
+            ThemThongBao("Cập nhật nghỉ phép", $"Đơn nghỉ của {donNghiDangChon.NhanVien} đã chuyển sang {trangThai}. Lý do xử lý: {lyDoXuLy}. {ghiChuTongQuan}", "Nghỉ phép");
         });
+    }
+
+    private static string TaoLyDoXuLyNghiPhep(string lyDoDangNhap, string trangThai)
+    {
+        if (!string.IsNullOrWhiteSpace(lyDoDangNhap))
+        {
+            return lyDoDangNhap.Trim();
+        }
+
+        return QuyTacNghiepVuNhanSu.LaTrangThaiNghiPhepDaDuyet(trangThai)
+            ? "Đồng ý theo kế hoạch nhân sự."
+            : "Từ chối sau khi rà soát lịch vận hành.";
     }
 
     private string TaoGhiChuTongQuanSauDuyetNghi(NghiPhep nghiPhep)
@@ -2493,6 +3164,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             }
 
             DuLieu = banSao.TaoKhoDuLieu();
+            ApDungTrangThaiDocThongBao();
             NguonDuLieu = $"Bản phục hồi cục bộ - {Path.GetFileName(hopThoai.FileName)}";
             CauHinhDanhSachNhanVienView();
             DanhSachThongBaoView = CollectionViewSource.GetDefaultView(DuLieu.ThongBao);
@@ -2503,16 +3175,21 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             BaoThayDoi(nameof(DanhSachUngVienView));
             DanhSachPhieuLuongView = CollectionViewSource.GetDefaultView(DuLieu.PhieuLuong);
             DanhSachPhieuLuongView.Filter = obj => obj is PhieuLuong phieuLuong && LocPhieuLuong(phieuLuong);
+            DanhSachPhieuLuongView.SortDescriptions.Clear();
+            DanhSachPhieuLuongView.SortDescriptions.Add(new SortDescription(nameof(PhieuLuong.KyLuong), ListSortDirection.Descending));
+            DanhSachPhieuLuongView.SortDescriptions.Add(new SortDescription(nameof(PhieuLuong.NhanVien), ListSortDirection.Ascending));
             BaoThayDoi(nameof(DanhSachPhieuLuongView));
+            BaoThayDoi(nameof(BangLuongNhanVienHienThi));
+            BaoThayDoi(nameof(SoPhieuLuongDaLoc));
+            BaoThayDoi(nameof(TongThucLanhDaLoc));
+            BaoThayDoi(nameof(LuongCaoBangLuongHienThi));
             DanhSachChamCongView = CollectionViewSource.GetDefaultView(DuLieu.ChamCong);
             DanhSachChamCongView.Filter = obj => obj is ChamCong chamCong && LocChamCong(chamCong);
             DanhSachChamCongView.SortDescriptions.Clear();
             DanhSachChamCongView.SortDescriptions.Add(new SortDescription(nameof(ChamCong.GioVao), ListSortDirection.Descending));
             DanhSachChamCongView.SortDescriptions.Add(new SortDescription(nameof(ChamCong.NhanVien), ListSortDirection.Ascending));
             BaoThayDoi(nameof(DanhSachChamCongView));
-            DanhSachNghiPhepView = CollectionViewSource.GetDefaultView(DuLieu.NghiPhep);
-            DanhSachNghiPhepView.Filter = obj => obj is NghiPhep nghiPhep && LocNghiPhep(nghiPhep);
-            BaoThayDoi(nameof(DanhSachNghiPhepView));
+            CauHinhDanhSachNghiPhepView();
             DanhSachDanhGiaView = CollectionViewSource.GetDefaultView(DuLieu.DanhGia);
             DanhSachDanhGiaView.Filter = obj => obj is DanhGia danhGia && LocDanhGia(danhGia);
             DanhSachDanhGiaView.SortDescriptions.Clear();
@@ -2545,6 +3222,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             else
             {
                 DanhSachNhanVienView.Refresh();
+                LamMoiBoLocBangLuong();
                 BaoCaoThongKe();
                 LamMoiLenhChonNhanVien();
                 LamMoiThongBao();
@@ -2556,9 +3234,161 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         }
     }
 
+    private void TaiTrangThaiDocThongBao()
+    {
+        try
+        {
+            var duongDan = DuongDanLuuTrangThaiDocThongBao();
+            if (!File.Exists(duongDan))
+            {
+                return;
+            }
+
+            var danhSach = JsonSerializer.Deserialize<List<string>>(File.ReadAllText(duongDan));
+            if (danhSach is null)
+            {
+                return;
+            }
+
+            foreach (var khoa in danhSach.Where(khoa => !string.IsNullOrWhiteSpace(khoa)))
+            {
+                khoaThongBaoDaDoc.Add(khoa);
+            }
+        }
+        catch
+        {
+            // Trạng thái đọc chỉ là dữ liệu hỗ trợ giao diện, bỏ qua nếu file cục bộ bị lỗi.
+        }
+    }
+
+    private void LuuTrangThaiDocThongBao()
+    {
+        try
+        {
+            var duongDan = DuongDanLuuTrangThaiDocThongBao();
+            Directory.CreateDirectory(Path.GetDirectoryName(duongDan)!);
+            File.WriteAllText(duongDan, JsonSerializer.Serialize(khoaThongBaoDaDoc.OrderBy(x => x).ToList()));
+        }
+        catch
+        {
+            // Không chặn nghiệp vụ nếu Windows không cho ghi file trạng thái cục bộ.
+        }
+    }
+
+    private string DuongDanLuuTrangThaiDocThongBao()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "QuanLyNhanSuWpf",
+            "ThongBao",
+            $"DaDoc_{LamSachTenFile(TenDangNhap)}.json");
+    }
+
+    private void ApDungTrangThaiDocThongBao()
+    {
+        foreach (var thongBao in DuLieu.ThongBao)
+        {
+            ApDungTrangThaiDocThongBao(thongBao);
+        }
+    }
+
+    private void ApDungTrangThaiDocThongBao(ThongBaoHeThong thongBao)
+    {
+        if (khoaThongBaoDaDoc.Contains(TaoKhoaThongBao(thongBao)))
+        {
+            thongBao.DaDoc = true;
+        }
+    }
+
+    private void CapNhatDocThongBao(object? thamSo)
+    {
+        if (thamSo is ThongBaoHeThong thongBao)
+        {
+            LuuMotTrangThaiDocThongBao(thongBao);
+        }
+        else
+        {
+            foreach (var dong in DuLieu.ThongBao)
+            {
+                LuuMotTrangThaiDocThongBao(dong, luuNgay: false);
+            }
+
+            LuuTrangThaiDocThongBao();
+        }
+
+        LamMoiThongBao();
+    }
+
+    private void DanhDauThongBaoDaDoc(ThongBaoHeThong thongBao)
+    {
+        thongBao.DaDoc = true;
+        LuuMotTrangThaiDocThongBao(thongBao);
+    }
+
+    private void LuuMotTrangThaiDocThongBao(ThongBaoHeThong thongBao, bool luuNgay = true)
+    {
+        var khoa = TaoKhoaThongBao(thongBao);
+        if (thongBao.DaDoc)
+        {
+            khoaThongBaoDaDoc.Add(khoa);
+        }
+        else
+        {
+            khoaThongBaoDaDoc.Remove(khoa);
+        }
+
+        if (luuNgay)
+        {
+            LuuTrangThaiDocThongBao();
+        }
+    }
+
+    private static string TaoKhoaThongBao(ThongBaoHeThong thongBao)
+    {
+        return $"{thongBao.PhanHe}|{thongBao.TieuDe}|{thongBao.NoiDung}|{thongBao.MucDo}|{thongBao.TenTepDinhKem}";
+    }
+
+    private void ThemThongBaoVaoDanhSach(ThongBaoHeThong thongBao)
+    {
+        ApDungTrangThaiDocThongBao(thongBao);
+        if (!thongBaoPhienLamViec.Any(x => LaCungThongBao(x, thongBao)))
+        {
+            thongBaoPhienLamViec.Insert(0, thongBao);
+        }
+
+        if (!DuLieu.ThongBao.Any(x => LaCungThongBao(x, thongBao)))
+        {
+            DuLieu.ThongBao.Insert(0, thongBao);
+        }
+    }
+
+    private void NhapThongBaoPhienLamViec()
+    {
+        for (var i = thongBaoPhienLamViec.Count - 1; i >= 0; i--)
+        {
+            var thongBao = thongBaoPhienLamViec[i];
+            ApDungTrangThaiDocThongBao(thongBao);
+            if (!DuLieu.ThongBao.Any(x => LaCungThongBao(x, thongBao)))
+            {
+                DuLieu.ThongBao.Insert(0, thongBao);
+            }
+        }
+    }
+
+    private static bool LaCungThongBao(ThongBaoHeThong trai, ThongBaoHeThong phai)
+    {
+        return ReferenceEquals(trai, phai)
+            || (string.Equals(trai.TieuDe, phai.TieuDe, StringComparison.Ordinal)
+                && string.Equals(trai.NoiDung, phai.NoiDung, StringComparison.Ordinal)
+                && string.Equals(trai.PhanHe, phai.PhanHe, StringComparison.Ordinal)
+                && string.Equals(trai.TenTepDinhKem, phai.TenTepDinhKem, StringComparison.Ordinal)
+                && Math.Abs((trai.ThoiGian - phai.ThoiGian).TotalSeconds) < 1);
+    }
+
     private void ThemThongBao(string tieuDe, string noiDung, string phanHe)
     {
-        DuLieu.ThongBao.Insert(0, new ThongBaoHeThong(tieuDe, noiDung, phanHe, DateTime.Now, "Thông tin"));
+        var thongBao = new ThongBaoHeThong(tieuDe, noiDung, phanHe, DateTime.Now, "Thông tin");
+        ThemThongBaoVaoDanhSach(thongBao);
         LamMoiThongBao();
         HienThongBaoNhanh(noiDung);
         if (DangDungSql)
@@ -2636,6 +3466,84 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         (ChotDanhGiaLenh as LenhGiaoDien)?.LamMoi();
     }
 
+    private void LamMoiLenhNghiPhep()
+    {
+        (DuyetNghiPhepLenh as LenhGiaoDien)?.LamMoi();
+        (TuChoiNghiPhepLenh as LenhGiaoDien)?.LamMoi();
+        (DuyetNghiPhepDongLenh as LenhGiaoDien)?.LamMoi();
+        (TuChoiNghiPhepDongLenh as LenhGiaoDien)?.LamMoi();
+    }
+
+    private void BieuMauPhongBan_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(BieuMauPhongBan.TenPhongBan)
+            or nameof(BieuMauPhongBan.MaTruongPhong)
+            or nameof(BieuMauPhongBan.MaPhongBan))
+        {
+            LamMoiLenhChonPhongBan();
+        }
+    }
+
+    private void BieuMauNhanVien_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(NhanVien.MaPhongBan))
+        {
+            BaoThayDoi(nameof(ViTriTheoPhongBanBieuMauNhanVien));
+            DongBoViTriNhanVienTheoPhongBan();
+        }
+        else if (e.PropertyName == nameof(NhanVien.MaViTri))
+        {
+            var viTri = DuLieu.ViTri.FirstOrDefault(v => v.MaViTri == BieuMauNhanVien.MaViTri);
+            if (viTri is not null)
+            {
+                BieuMauNhanVien.ViTri = viTri.TenViTri;
+            }
+        }
+        else if (e.PropertyName == nameof(NhanVien.DangLamViec))
+        {
+            BaoThayDoi(nameof(NhanVienDangLamViecTrongPhamVi));
+            BaoThayDoi(nameof(NhanVienCoTheBoNhiemTruongPhong));
+        }
+
+        (LuuLenh as LenhGiaoDien)?.LamMoi();
+        (XoaLenh as LenhGiaoDien)?.LamMoi();
+    }
+
+    private void DongBoViTriNhanVienTheoPhongBan()
+    {
+        var phongBan = DuLieu.PhongBan.FirstOrDefault(p => p.MaPhongBan == BieuMauNhanVien.MaPhongBan);
+        if (phongBan is not null)
+        {
+            BieuMauNhanVien.PhongBan = phongBan.TenPhongBan;
+        }
+
+        var viTriHienTai = ViTriTheoPhongBanBieuMauNhanVien.FirstOrDefault(v => v.MaViTri == BieuMauNhanVien.MaViTri);
+        if (viTriHienTai is not null)
+        {
+            BieuMauNhanVien.ViTri = viTriHienTai.TenViTri;
+            return;
+        }
+
+        var viTriMacDinh = ChonViTriMacDinhTheoPhongBan(BieuMauNhanVien.MaPhongBan);
+        if (viTriMacDinh is null)
+        {
+            return;
+        }
+
+        BieuMauNhanVien.MaViTri = viTriMacDinh.MaViTri;
+        BieuMauNhanVien.ViTri = viTriMacDinh.TenViTri;
+    }
+
+    private ViTriCongViec? ChonViTriMacDinhTheoPhongBan(int maPhongBan)
+    {
+        return DuLieu.ViTri
+            .Where(v => v.MaPhongBan == maPhongBan)
+            .OrderBy(v => BangXepHangChucVu.LayThuTu(v.TenViTri) == 3 ? 1 : 0)
+            .ThenBy(v => BangXepHangChucVu.LayThuTu(v.TenViTri))
+            .ThenBy(v => v.MaViTri)
+            .FirstOrDefault();
+    }
+
     private void NeuDangSuaNhanVienThiNapBieuMau()
     {
         if (MucDangChon == "Nhân viên" && NhanVienDangChon is not null)
@@ -2694,14 +3602,6 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 DuLieu.PhongBan[i] = DuLieu.PhongBan[i] with { TruongPhong = "Chưa phân công" };
             }
         }
-    }
-
-    private void XoaDuLieuLienQuanNhanVien(string tenNhanVien)
-    {
-        XoaNhieu(DuLieu.ChamCong, x => x.NhanVien == tenNhanVien);
-        XoaNhieu(DuLieu.NghiPhep, x => x.NhanVien == tenNhanVien);
-        XoaNhieu(DuLieu.DanhGia, x => x.NhanVien == tenNhanVien || x.NguoiDanhGia == tenNhanVien);
-        XoaNhieu(DuLieu.PhieuLuong, x => x.NhanVien == tenNhanVien);
     }
 
     private void XoaViTriTheoPhongBan(int maPhongBan)
@@ -2801,7 +3701,6 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     {
         var tuKhoa = TuKhoaTraCuuDieuHanh.Trim();
         var dangLocTatCaPhongBan = string.Equals(PhongBanTraCuuDangChon, TatCaPhongBan, StringComparison.OrdinalIgnoreCase);
-        var nghiPhepHomNay = LayTenNhanVienNghiDaDuyetNgay(DateTime.Today);
         var phieuLuongTheoNhanVien = DuLieu.PhieuLuong
             .GroupBy(x => x.NhanVien, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
@@ -2828,6 +3727,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                     nhanVien.HoTen,
                     nhanVien.PhongBan,
                     nhanVien.ViTri,
+                    nhanVien.TrangThai,
                     diemDanhGia,
                     phieuLuong?.LuongCoBan ?? LayLuongCoBan(nhanVien),
                     phieuLuong?.ThucLanh ?? 0,
@@ -2872,10 +3772,11 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
                 return new TongHopPhongBanDieuHanh(
                     LayThuTuPhongBan(phongBan.MaPhongBan, phongBan.TenPhongBan),
+                    phongBan.MaPhongBan,
                     phongBan.TenPhongBan,
                     phongBan.TruongPhong,
                     truongPhong?.ViTri ?? "Chưa bố trí",
-                    nhanSu.Count(x => !nghiPhepHomNay.Contains(x.HoTen)),
+                    nhanSu.Count,
                     nhanSu.Sum(x => x.ThucLanh),
                     xuatSac?.HoTen ?? "Chưa có đánh giá",
                     diemXuatSac.HasValue ? $"{diemXuatSac.Value:N1}" : "--",
@@ -2918,9 +3819,16 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             BaoThayDoi(nameof(PhongBanChamCongDangChon));
         }
 
+        if (!CacPhongBanTraCuu.Contains(PhongBanNghiPhepDangChon, StringComparer.OrdinalIgnoreCase))
+        {
+            phongBanNghiPhepDangChon = TatCaPhongBan;
+            BaoThayDoi(nameof(PhongBanNghiPhepDangChon));
+        }
+
         LamMoiBoLocNhanVien();
         LamMoiBoLocBangLuong();
         LamMoiBoLocChamCong();
+        LamMoiBoLocNghiPhep();
 
         DanhSachNhanSuTraCuu = new ObservableCollection<DongTraCuuNhanSu>(
             tatCaNhanSu
@@ -2955,6 +3863,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             || ChuaTuKhoa(nhanSu.MaSo, tuKhoa)
             || ChuaTuKhoa(nhanSu.PhongBan, tuKhoa)
             || ChuaTuKhoa(nhanSu.ViTri, tuKhoa)
+            || ChuaTuKhoa(nhanSu.TrangThai, tuKhoa)
             || ChuaTuKhoa(nhanSu.CapBac, tuKhoa);
     }
 
@@ -3013,7 +3922,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             tenTepDinhKem = TenTepThongBaoMoi;
         }
 
-        DuLieu.ThongBao.Insert(0, new ThongBaoHeThong(tieuDe, noiDung, phanHe, DateTime.Now, mucDo, false, tenTepDinhKem, duongDanTepDinhKem));
+        var thongBao = new ThongBaoHeThong(tieuDe, noiDung, phanHe, DateTime.Now, mucDo, false, tenTepDinhKem, duongDanTepDinhKem);
+        ThemThongBaoVaoDanhSach(thongBao);
         LamMoiThongBao();
         DatLaiBieuMauThongBao();
         DangMoBieuMauThongBao = false;
@@ -3059,6 +3969,275 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         TenTepThongBaoMoi = "";
     }
 
+    private void MoThongBao(object? thamSo)
+    {
+        if (thamSo is not ThongBaoHeThong thongBao)
+        {
+            return;
+        }
+
+        DanhDauThongBaoDaDoc(thongBao);
+        LamMoiThongBao();
+
+        var phanHe = thongBao.PhanHe;
+        var vanBan = TaoVanBanThongBao(thongBao);
+        if (CoTuKhoaThongBao(phanHe, "Nghỉ phép", "nghi phep") || CoTuKhoaThongBao(vanBan, "đơn nghỉ", "nghỉ phép", "nghi phep"))
+        {
+            MoThongBaoNghiPhep();
+            return;
+        }
+
+        if (CoTuKhoaThongBao(phanHe, "Bảng lương", "bang luong", "payroll") || CoTuKhoaThongBao(vanBan, "phiếu lương", "bảng lương", "payroll"))
+        {
+            MoThongBaoBangLuong(thongBao);
+            return;
+        }
+
+        if (CoTuKhoaThongBao(phanHe, "Tuyển dụng", "tuyen dung") || CoTuKhoaThongBao(vanBan, "ứng viên", "tuyển dụng", "tuyen dung"))
+        {
+            MoThongBaoTuyenDung(thongBao);
+            return;
+        }
+
+        if (CoTuKhoaThongBao(phanHe, "Nhân viên", "nhan vien", "hồ sơ") || CoTuKhoaThongBao(vanBan, "hồ sơ nhân sự", "hồ sơ nhân viên"))
+        {
+            MoHoSoNhanVien(TimNhanVienTrongThongBao(thongBao));
+            return;
+        }
+
+        if (CoTuKhoaThongBao(phanHe, "Chấm công", "cham cong"))
+        {
+            MoThongBaoChamCong(thongBao);
+            return;
+        }
+
+        if (CoTuKhoaThongBao(phanHe, "Đánh giá", "danh gia"))
+        {
+            MoThongBaoDanhGia(thongBao);
+            return;
+        }
+
+        if (CoTuKhoaThongBao(phanHe, "Phòng ban", "phong ban"))
+        {
+            MoThongBaoPhongBan(thongBao);
+            return;
+        }
+
+        if (CoTuKhoaThongBao(phanHe, "Báo cáo", "bao cao"))
+        {
+            MoMucTheoThongBao("Báo cáo");
+            HienThongBaoNhanh("Đã mở phân hệ báo cáo.");
+            return;
+        }
+
+        if (CoTuKhoaThongBao(phanHe, "Cài đặt", "tai khoan", "tài khoản"))
+        {
+            MoMucTheoThongBao("Cài đặt tài khoản");
+            HienThongBaoNhanh("Đã mở phân hệ tài khoản.");
+            return;
+        }
+
+        MoMucTheoThongBao("Tổng quan");
+        HienThongBaoNhanh("Đã mở tổng quan hệ thống.");
+    }
+
+    private void MoThongBaoNghiPhep()
+    {
+        if (!MoMucTheoThongBao("Nghỉ phép"))
+        {
+            return;
+        }
+
+        NghiPhepDangChon = DuLieu.NghiPhep
+            .Where(LocNghiPhep)
+            .OrderBy(x => x.ThuTuTrangThai)
+            .ThenByDescending(x => x.ThuTuMoiNhat)
+            .ThenByDescending(x => x.TuNgay)
+            .ThenByDescending(x => x.DenNgay)
+            .FirstOrDefault();
+
+        HienThongBaoNhanh(NghiPhepDangChon is null
+            ? "Đã mở phân hệ nghỉ phép."
+            : $"Đã mở đơn nghỉ của {NghiPhepDangChon.NhanVien}.");
+    }
+
+    private void MoThongBaoBangLuong(ThongBaoHeThong thongBao)
+    {
+        if (!MoMucTheoThongBao("Bảng lương"))
+        {
+            return;
+        }
+
+        var phieuLuong = TimPhieuLuongTrongThongBao(thongBao);
+        PhongBanBangLuongDangChon = TatCaPhongBan;
+        TuKhoaBangLuong = phieuLuong?.NhanVien ?? "";
+        PhieuLuongDangChon = phieuLuong;
+        if (phieuLuong is not null)
+        {
+            NhanVienDangChon = LayNhanVienTheoTen(phieuLuong.NhanVien) ?? NhanVienDangChon;
+        }
+
+        HienThongBaoNhanh(phieuLuong is null
+            ? "Đã mở phân hệ bảng lương."
+            : $"Đã mở phiếu lương {phieuLuong.KyLuong} của {phieuLuong.NhanVien}.");
+    }
+
+    private void MoThongBaoTuyenDung(ThongBaoHeThong thongBao)
+    {
+        var ungVien = TimUngVienTrongThongBao(thongBao);
+        if (ungVien is not null)
+        {
+            if (MoMucTheoThongBao("Ứng viên"))
+            {
+                UngVienDangChon = ungVien;
+                HienThongBaoNhanh($"Đã mở hồ sơ ứng viên {ungVien.HoTen}.");
+            }
+            return;
+        }
+
+        var nhanVien = TimNhanVienTrongThongBao(thongBao);
+        if (nhanVien is not null)
+        {
+            MoHoSoNhanVien(nhanVien);
+            return;
+        }
+
+        if (MoMucTheoThongBao("Ứng viên"))
+        {
+            UngVienDangChon = DuLieu.UngVien.FirstOrDefault(LocUngVien);
+            HienThongBaoNhanh("Đã mở phân hệ tuyển dụng.");
+        }
+    }
+
+    private void MoHoSoNhanVien(NhanVien? nhanVien)
+    {
+        if (!MoMucTheoThongBao("Nhân viên"))
+        {
+            return;
+        }
+
+        PhongBanNhanVienDangChon = TatCaPhongBan;
+        TrangThaiNhanVienDangChon = TatCaTrangThaiNhanVien;
+        TuKhoaTimKiem = nhanVien?.HoTen ?? "";
+        NhanVienDangChon = nhanVien ?? ChonNhanVienTrongPhamVi();
+        HienThongBaoNhanh(NhanVienDangChon is null
+            ? "Đã mở phân hệ hồ sơ nhân viên."
+            : $"Đã mở hồ sơ nhân viên {NhanVienDangChon.HoTen}.");
+    }
+
+    private void MoThongBaoChamCong(ThongBaoHeThong thongBao)
+    {
+        if (!MoMucTheoThongBao("Chấm công"))
+        {
+            return;
+        }
+
+        var nhanVien = TimNhanVienTrongThongBao(thongBao);
+        TuKhoaChamCong = nhanVien?.HoTen ?? "";
+        ChamCongDangChon = DuLieu.ChamCong
+            .Where(LocChamCong)
+            .OrderByDescending(x => x.GioVao)
+            .FirstOrDefault();
+        HienThongBaoNhanh(ChamCongDangChon is null
+            ? "Đã mở phân hệ chấm công."
+            : $"Đã mở ca chấm công của {ChamCongDangChon.NhanVien}.");
+    }
+
+    private void MoThongBaoDanhGia(ThongBaoHeThong thongBao)
+    {
+        if (!MoMucTheoThongBao("Đánh giá"))
+        {
+            return;
+        }
+
+        var nhanVien = TimNhanVienTrongThongBao(thongBao);
+        DanhGiaDangChon = DuLieu.DanhGia
+            .Where(LocDanhGia)
+            .Where(x => nhanVien is null || string.Equals(x.NhanVien, nhanVien.HoTen, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x => x.KyDanhGia)
+            .ThenByDescending(x => x.Diem)
+            .FirstOrDefault();
+        HienThongBaoNhanh(DanhGiaDangChon is null
+            ? "Đã mở phân hệ đánh giá."
+            : $"Đã mở đánh giá của {DanhGiaDangChon.NhanVien}.");
+    }
+
+    private void MoThongBaoPhongBan(ThongBaoHeThong thongBao)
+    {
+        if (!MoMucTheoThongBao("Phòng ban"))
+        {
+            return;
+        }
+
+        var vanBan = TaoVanBanThongBao(thongBao);
+        PhongBanDangChon = DuLieu.PhongBan
+            .FirstOrDefault(x => vanBan.Contains(x.TenPhongBan, StringComparison.OrdinalIgnoreCase))
+            ?? DuLieu.PhongBan.FirstOrDefault();
+        HienThongBaoNhanh(PhongBanDangChon is null
+            ? "Đã mở phân hệ phòng ban."
+            : $"Đã mở phòng ban {PhongBanDangChon.TenPhongBan}.");
+    }
+
+    private bool MoMucTheoThongBao(string muc)
+    {
+        if (!CoQuyenTruyCap(muc))
+        {
+            MessageBox.Show($"Tài khoản {VaiTroNguoiDung} chưa có quyền vào phân hệ {muc}.", "Phân quyền", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        MucDangChon = muc;
+        return true;
+    }
+
+    private NhanVien? TimNhanVienTrongThongBao(ThongBaoHeThong thongBao)
+    {
+        var vanBan = TaoVanBanThongBao(thongBao);
+        return DuLieu.NhanVien
+            .Where(CoTheXemNhanVien)
+            .OrderByDescending(x => x.HoTen.Length)
+            .FirstOrDefault(x => vanBan.Contains(x.HoTen, StringComparison.OrdinalIgnoreCase)
+                || vanBan.Contains(x.MaSo, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private UngVien? TimUngVienTrongThongBao(ThongBaoHeThong thongBao)
+    {
+        var vanBan = TaoVanBanThongBao(thongBao);
+        return DuLieu.UngVien
+            .Where(LocUngVien)
+            .OrderByDescending(x => x.HoTen.Length)
+            .FirstOrDefault(x => vanBan.Contains(x.HoTen, StringComparison.OrdinalIgnoreCase)
+                || vanBan.Contains(x.Email, StringComparison.OrdinalIgnoreCase)
+                || vanBan.Contains(x.DienThoai, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private PhieuLuong? TimPhieuLuongTrongThongBao(ThongBaoHeThong thongBao)
+    {
+        var vanBan = TaoVanBanThongBao(thongBao);
+        var nhanVien = TimNhanVienTrongThongBao(thongBao);
+        var truyVan = DuLieu.PhieuLuong.Where(x => CoTheXemTheoTen(x.NhanVien));
+        if (nhanVien is not null)
+        {
+            truyVan = truyVan.Where(x => string.Equals(x.NhanVien, nhanVien.HoTen, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return truyVan
+            .OrderByDescending(x => vanBan.Contains(x.KyLuong, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(x => x.KyLuong)
+            .ThenByDescending(x => x.ThucLanh)
+            .FirstOrDefault();
+    }
+
+    private static string TaoVanBanThongBao(ThongBaoHeThong thongBao)
+    {
+        return $"{thongBao.TieuDe} {thongBao.NoiDung} {thongBao.PhanHe} {thongBao.MucDo}";
+    }
+
+    private static bool CoTuKhoaThongBao(string vanBan, params string[] cacTuKhoa)
+    {
+        return cacTuKhoa.Any(tuKhoa => vanBan.Contains(tuKhoa, StringComparison.OrdinalIgnoreCase));
+    }
+
     private void MoTepThongBao(object? thamSo)
     {
         if (thamSo is not ThongBaoHeThong thongBao || !thongBao.CoTepDinhKem)
@@ -3072,7 +4251,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return;
         }
 
-        thongBao.DaDoc = true;
+        DanhDauThongBaoDaDoc(thongBao);
         LamMoiThongBao();
         Process.Start(new ProcessStartInfo(thongBao.DuongDanTepDinhKem) { UseShellExecute = true });
     }
@@ -3227,7 +4406,6 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 nhanVien.SoNamBaoHiemXaHoi.ToString(),
                 nhanVien.PhongBan,
                 nhanVien.ViTri,
-                nhanVien.CapBacChucVu,
                 nhanVien.NgaySinh.ToString("dd/MM/yyyy"),
                 nhanVien.NgayThamGiaBaoHiemXaHoi.ToString("dd/MM/yyyy"),
                 nhanVien.NgayVaoLam.ToString("dd/MM/yyyy"),
@@ -3252,7 +4430,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 $"Cá nhân xuất sắc: {CaNhanXuatSacHoSoHienThi}",
                 $"Lương cao nhất: {LuongCaoHoSoHienThi}"
             ],
-            ["Mã NV", "Họ tên", "Tuổi", "Năm BHXH", "Phòng ban", "Chức vụ", "Cấp bậc", "Ngày sinh", "Ngày BHXH", "Ngày vào", "Trạng thái", "Lương dự kiến"],
+            ["Mã NV", "Họ tên", "Tuổi", "Năm BHXH", "Phòng ban", "Chức vụ", "Ngày sinh", "Ngày BHXH", "Ngày vào", "Trạng thái", "Lương dự kiến"],
             dongBang,
             nguoiLap,
             chucVuNguoiLap);
@@ -3368,6 +4546,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             .ThenBy(phieuLuong => phieuLuong.NhanVien)
             .ToList();
         var phieuLuongCaoNhat = danhSachLuong
+            .Where(phieuLuong => phieuLuong.ThucLanh > 0)
             .OrderByDescending(phieuLuong => phieuLuong.ThucLanh)
             .FirstOrDefault();
         var dongBang = danhSachLuong

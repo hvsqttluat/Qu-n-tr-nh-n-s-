@@ -1,5 +1,8 @@
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace QuanLyNhanSuWpf;
 
@@ -24,6 +27,104 @@ public partial class MainWindow : Window
     {
         thanhBenDangMo = !thanhBenDangMo;
         CapNhatThanhBen();
+    }
+
+    private void ThongBao_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (LaBamVaoDieuKhienTuongTac(e.OriginalSource as DependencyObject, sender as DependencyObject))
+        {
+            return;
+        }
+
+        if (sender is FrameworkElement { DataContext: ThongBaoHeThong thongBao }
+            && viewModel.MoThongBaoLenh.CanExecute(thongBao))
+        {
+            viewModel.MoThongBaoLenh.Execute(thongBao);
+            e.Handled = true;
+        }
+    }
+
+    private void CuonNoiDung_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        var scrollViewer = TimScrollViewerCoTheCuon(e.OriginalSource as DependencyObject, e.Delta);
+        if (scrollViewer is null && sender is ScrollViewer scrollViewerGoc && CoTheCuon(scrollViewerGoc, e.Delta))
+        {
+            scrollViewer = scrollViewerGoc;
+        }
+
+        if (scrollViewer is null)
+        {
+            return;
+        }
+
+        var khoangCuon = e.Delta > 0 ? -56 : 56;
+        var viTriMoi = Math.Max(0, Math.Min(scrollViewer.ScrollableHeight, scrollViewer.VerticalOffset + khoangCuon));
+        scrollViewer.ScrollToVerticalOffset(viTriMoi);
+        e.Handled = true;
+    }
+
+    private static ScrollViewer? TimScrollViewerCoTheCuon(DependencyObject? nguon, int doLech)
+    {
+        while (nguon is not null)
+        {
+            if (nguon is ScrollViewer scrollViewer && CoTheCuon(scrollViewer, doLech))
+            {
+                return scrollViewer;
+            }
+
+            nguon = LayDoiTuongCha(nguon);
+        }
+
+        return null;
+    }
+
+    private static bool CoTheCuon(ScrollViewer scrollViewer, int doLech)
+    {
+        if (scrollViewer.ScrollableHeight <= 0)
+        {
+            return false;
+        }
+
+        return doLech > 0
+            ? scrollViewer.VerticalOffset > 0
+            : scrollViewer.VerticalOffset < scrollViewer.ScrollableHeight;
+    }
+
+    private static bool LaBamVaoDieuKhienTuongTac(DependencyObject? nguon, DependencyObject? gioiHan)
+    {
+        while (nguon is not null && !ReferenceEquals(nguon, gioiHan))
+        {
+            if (nguon is ButtonBase or TextBoxBase or ComboBox or DatePicker)
+            {
+                return true;
+            }
+
+            nguon = LayDoiTuongCha(nguon);
+        }
+
+        return false;
+    }
+
+    private static DependencyObject? LayDoiTuongCha(DependencyObject nguon)
+    {
+        try
+        {
+            var chaTrucQuan = VisualTreeHelper.GetParent(nguon);
+            if (chaTrucQuan is not null)
+            {
+                return chaTrucQuan;
+            }
+        }
+        catch (InvalidOperationException)
+        {
+        }
+
+        return nguon switch
+        {
+            FrameworkElement frameworkElement => frameworkElement.Parent,
+            FrameworkContentElement frameworkContentElement => frameworkContentElement.Parent,
+            _ => null
+        };
     }
 
     private void CapNhatThanhBen()

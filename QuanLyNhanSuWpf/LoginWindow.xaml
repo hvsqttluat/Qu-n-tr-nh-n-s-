@@ -113,7 +113,7 @@
                     </Border>
 
                     <StackPanel Grid.Column="1" Margin="16,6,0,0">
-                        <TextBlock Text="Quản trị nhân sự" Foreground="White" FontSize="19" FontWeight="SemiBold"/>
+                        <TextBlock Text="QUẢN TRỊ NHÂN SỰ" Foreground="White" FontSize="19" FontWeight="SemiBold"/>
                         <TextBlock Text="Hồ sơ, vận hành và báo cáo tập trung" Foreground="#D7EEF0" FontSize="13" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Grid>
@@ -143,13 +143,13 @@
                 </Border>
 
                 <StackPanel VerticalAlignment="Center" MaxWidth="470">
-                    <TextBlock Text="Hệ thống quản lý nhân sự"
+                    <TextBlock Text="HỆ THỐNG QUẢN TRỊ NHÂN SỰ "
                                Foreground="White"
-                               FontSize="39"
+                               FontSize="31"
                                FontWeight="SemiBold"
                                LineHeight="47"
                                TextWrapping="Wrap"/>
-                    <TextBlock Text="Một không gian làm việc gọn gàng cho quản lý hồ sơ, chấm công, nghỉ phép và tiền lương."
+                    <TextBlock Text="Không gian làm việc chuyên nghiệp, hiện đại cho quản lý hồ sơ, chấm công, nghỉ phép và tiền lương."
                                Foreground="#E3F2F4"
                                FontSize="15"
                                LineHeight="24"
@@ -172,7 +172,7 @@
                 </Border.Effect>
 
                 <StackPanel>
-                    <TextBlock Text="Đăng nhập tài khoản" FontSize="31" FontWeight="SemiBold" Foreground="#172033"/>
+                    <TextBlock Text="ĐĂNG NHẬP TÀI KHOẢN" FontSize="31" FontWeight="SemiBold" Foreground="#172033"/>
                     <TextBlock Text="Nhập thông tin tài khoản để bắt đầu phiên làm việc."
                                Foreground="#64748B"
                                FontSize="14"

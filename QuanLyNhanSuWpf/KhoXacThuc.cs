@@ -6,6 +6,8 @@ public record KetQuaDangNhap(bool ThanhCong, string ThongBao, PhienDangNhap? Phi
 
 public class KhoXacThuc
 {
+    private const int SoLanSaiToiDa = 5;
+    private static readonly TimeSpan ThoiGianKhoaTamThoi = TimeSpan.FromHours(5);
     private readonly IReadOnlyList<string> cacChuoiKetNoi = CauHinhUngDung.LayChuoiKetNoiUngVien();
 
     public async Task<KetQuaDangNhap> DangNhapAsync(string tenDangNhap, string matKhau)
@@ -23,6 +25,7 @@ public class KhoXacThuc
                 await DamBaoTaiKhoanMacDinhAsync(ketNoi);
                 await TaiKhoanNhanSuSql.DamBaoTheoNhanVienAsync(ketNoi);
 
+                await MoKhoaTamThoiNeuHetHanAsync(ketNoi, tenDangNhap);
                 var taiKhoan = await LayTaiKhoanAsync(ketNoi, tenDangNhap);
                 if (taiKhoan is null)
                 {
@@ -36,12 +39,28 @@ public class KhoXacThuc
                     return new KetQuaDangNhap(false, "Tài khoản đang bị khóa. Vui lòng liên hệ quản trị hệ thống.", null, CauHinhUngDung.LayTenMayChu(chuoiKetNoi));
                 }
 
+                if (taiKhoan.LockoutUntilAt is not null && taiKhoan.LockoutUntilAt.Value > DateTime.UtcNow)
+                {
+                    var khoaDen = taiKhoan.LockoutUntilAt.Value.ToLocalTime();
+                    await GhiNhatKyAsync(ketNoi, tenDangNhap, "LoginLockedOut", "HR_Users", tenDangNhap, $"Tai khoan dang bi khoa tam thoi den {khoaDen:HH:mm dd/MM/yyyy}.");
+                    return new KetQuaDangNhap(false, $"Tài khoản tạm khóa đến {khoaDen:HH:mm dd/MM/yyyy} do nhập sai quá {SoLanSaiToiDa} lần.", null, CauHinhUngDung.LayTenMayChu(chuoiKetNoi));
+                }
+
                 var hopLe = BaoMatMatKhau.XacMinhMatKhau(matKhau, taiKhoan.PasswordHash, taiKhoan.PasswordSalt, taiKhoan.PasswordIterations);
                 if (!hopLe)
                 {
-                    await TangSoLanSaiAsync(ketNoi, tenDangNhap);
-                    await GhiNhatKyAsync(ketNoi, tenDangNhap, "LoginFailed", "HR_Users", tenDangNhap, "Sai mat khau.");
-                    return new KetQuaDangNhap(false, "Tên đăng nhập hoặc mật khẩu chưa đúng.", null, CauHinhUngDung.LayTenMayChu(chuoiKetNoi));
+                    var ketQuaSai = await TangSoLanSaiAsync(ketNoi, tenDangNhap);
+                    await GhiNhatKyAsync(ketNoi, tenDangNhap, "LoginFailed", "HR_Users", tenDangNhap, $"Sai mat khau lan {ketQuaSai.SoLanSai}.");
+
+                    if (ketQuaSai.LockoutUntilAt is not null)
+                    {
+                        var khoaDen = ketQuaSai.LockoutUntilAt.Value.ToLocalTime();
+                        await GhiNhatKyAsync(ketNoi, tenDangNhap, "LoginLockedOut", "HR_Users", tenDangNhap, $"Khoa tam thoi sau {ketQuaSai.SoLanSai} lan sai mat khau.");
+                        return new KetQuaDangNhap(false, $"Sai mật khẩu {ketQuaSai.SoLanSai} lần. Tài khoản tạm khóa đến {khoaDen:HH:mm dd/MM/yyyy}.", null, CauHinhUngDung.LayTenMayChu(chuoiKetNoi));
+                    }
+
+                    var conLai = Math.Max(0, SoLanSaiToiDa - ketQuaSai.SoLanSai);
+                    return new KetQuaDangNhap(false, $"Tên đăng nhập hoặc mật khẩu chưa đúng. Còn {conLai} lần trước khi tài khoản bị khóa {ThoiGianKhoaTamThoi.TotalHours:N0} giờ.", null, CauHinhUngDung.LayTenMayChu(chuoiKetNoi));
                 }
 
                 await CapNhatDangNhapThanhCongAsync(ketNoi, tenDangNhap);
@@ -110,7 +129,10 @@ public class KhoXacThuc
         await using var lenh = new SqlCommand("""
             UPDATE dbo.HR_Users
             SET FullName=@FullName,
-                RoleName=@RoleName
+                RoleName=CASE
+                    WHEN LOWER(@Username)=N'admin' THEN @RoleName
+                    ELSE RoleName
+                END
             WHERE Username=@Username
             """, ketNoi);
         lenh.Parameters.AddWithValue("@Username", taiKhoan.Username);
@@ -129,7 +151,7 @@ public class KhoXacThuc
     private static async Task<TaiKhoanXacThuc?> LayTaiKhoanAsync(SqlConnection ketNoi, string tenDangNhap)
     {
         await using var lenh = new SqlCommand("""
-            SELECT Username, FullName, RoleName, PasswordHash, PasswordSalt, PasswordIterations, IsActive
+            SELECT Username, FullName, RoleName, PasswordHash, PasswordSalt, PasswordIterations, IsActive, LockoutUntilAt
             FROM dbo.HR_Users
             WHERE Username=@Username
             """, ketNoi);
@@ -148,25 +170,58 @@ public class KhoXacThuc
             doc.GetString(3),
             doc.GetString(4),
             doc.GetInt32(5),
-            doc.GetBoolean(6));
+            doc.GetBoolean(6),
+            doc.IsDBNull(7) ? null : doc.GetDateTime(7));
     }
 
-    private static async Task TangSoLanSaiAsync(SqlConnection ketNoi, string tenDangNhap)
+    private static async Task MoKhoaTamThoiNeuHetHanAsync(SqlConnection ketNoi, string tenDangNhap)
     {
         await using var lenh = new SqlCommand("""
             UPDATE dbo.HR_Users
-            SET FailedLoginCount = FailedLoginCount + 1
+            SET FailedLoginCount = 0,
+                LockoutUntilAt = NULL
             WHERE Username=@Username
+              AND LockoutUntilAt IS NOT NULL
+              AND LockoutUntilAt <= SYSUTCDATETIME()
             """, ketNoi);
         lenh.Parameters.AddWithValue("@Username", tenDangNhap);
         await lenh.ExecuteNonQueryAsync();
+    }
+
+    private static async Task<KetQuaSaiDangNhap> TangSoLanSaiAsync(SqlConnection ketNoi, string tenDangNhap)
+    {
+        await using var lenh = new SqlCommand("""
+            UPDATE dbo.HR_Users
+            SET FailedLoginCount = FailedLoginCount + 1,
+                LockoutUntilAt = CASE
+                    WHEN FailedLoginCount + 1 >= @SoLanSaiToiDa THEN DATEADD(MINUTE, @SoPhutKhoa, SYSUTCDATETIME())
+                    ELSE LockoutUntilAt
+                END
+            WHERE Username=@Username;
+
+            SELECT FailedLoginCount, LockoutUntilAt
+            FROM dbo.HR_Users
+            WHERE Username=@Username;
+            """, ketNoi);
+        lenh.Parameters.AddWithValue("@Username", tenDangNhap);
+        lenh.Parameters.AddWithValue("@SoLanSaiToiDa", SoLanSaiToiDa);
+        lenh.Parameters.AddWithValue("@SoPhutKhoa", (int)ThoiGianKhoaTamThoi.TotalMinutes);
+        await using var doc = await lenh.ExecuteReaderAsync();
+        if (await doc.ReadAsync())
+        {
+            return new KetQuaSaiDangNhap(doc.GetInt32(0), doc.IsDBNull(1) ? null : doc.GetDateTime(1));
+        }
+
+        return new KetQuaSaiDangNhap(0, null);
     }
 
     private static async Task CapNhatDangNhapThanhCongAsync(SqlConnection ketNoi, string tenDangNhap)
     {
         await using var lenh = new SqlCommand("""
             UPDATE dbo.HR_Users
-            SET LastLoginAt = SYSUTCDATETIME(), FailedLoginCount = 0
+            SET LastLoginAt = SYSUTCDATETIME(),
+                FailedLoginCount = 0,
+                LockoutUntilAt = NULL
             WHERE Username=@Username
             """, ketNoi);
         lenh.Parameters.AddWithValue("@Username", tenDangNhap);
@@ -208,7 +263,9 @@ public class KhoXacThuc
         string PasswordHash,
         string PasswordSalt,
         int PasswordIterations,
-        bool IsActive);
+        bool IsActive,
+        DateTime? LockoutUntilAt);
 
     private record TaiKhoanMacDinhDto(string Username, string FullName, string RoleName);
+    private record KetQuaSaiDangNhap(int SoLanSai, DateTime? LockoutUntilAt);
 }
