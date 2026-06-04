@@ -52,6 +52,9 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private DateTime? denNgayChamCong = DateTime.Today;
     private string kyNghiPhepDangChon = "Tháng này";
     private string phongBanNghiPhepDangChon = TatCaPhongBan;
+    private string tuKhoaDanhGia = "";
+    private string phongBanDanhGiaDangChon = TatCaPhongBan;
+    private int tabDanhGiaDangChon;
     private string kyBaoCaoNhanSuDangChon = "Tháng này";
     private bool chiThongBaoChuaDoc;
     private bool dangMoBieuMauThongBao;
@@ -174,6 +177,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public ICollectionView DanhSachPhieuLuongView { get; private set; } = CollectionViewSource.GetDefaultView(new ObservableCollection<PhieuLuong>());
     public ICollectionView DanhSachChamCongView { get; private set; } = CollectionViewSource.GetDefaultView(new ObservableCollection<ChamCong>());
     public ICollectionView DanhSachNghiPhepView { get; private set; } = CollectionViewSource.GetDefaultView(new ObservableCollection<NghiPhep>());
+    public ICollectionView DanhSachNghiPhepDaDuyetView { get; private set; } = CollectionViewSource.GetDefaultView(new ObservableCollection<NghiPhep>());
+    public ICollectionView DanhSachDeNghiNghiPhepView { get; private set; } = CollectionViewSource.GetDefaultView(new ObservableCollection<NghiPhep>());
     public ICollectionView DanhSachDanhGiaView { get; private set; } = CollectionViewSource.GetDefaultView(new ObservableCollection<DanhGia>());
     public ICommand ChonMucLenh { get; }
     public ICommand ThemMoiLenh { get; }
@@ -460,6 +465,39 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             LamMoiBoLocNghiPhep();
         }
     }
+    public string TuKhoaDanhGia
+    {
+        get => tuKhoaDanhGia;
+        set
+        {
+            var giaTri = value ?? "";
+            if (string.Equals(tuKhoaDanhGia, giaTri, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            tuKhoaDanhGia = giaTri;
+            BaoThayDoi();
+            LamMoiBoLocDanhGia();
+        }
+    }
+    public string PhongBanDanhGiaDangChon
+    {
+        get => phongBanDanhGiaDangChon;
+        set
+        {
+            var giaTri = string.IsNullOrWhiteSpace(value) ? TatCaPhongBan : value;
+            if (string.Equals(phongBanDanhGiaDangChon, giaTri, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            phongBanDanhGiaDangChon = giaTri;
+            BaoThayDoi();
+            LamMoiBoLocDanhGia();
+        }
+    }
+    public int TabDanhGiaDangChon { get => tabDanhGiaDangChon; set { tabDanhGiaDangChon = value; BaoThayDoi(); } }
     public string KyBaoCaoNhanSuDangChon
     {
         get => kyBaoCaoNhanSuDangChon;
@@ -831,15 +869,35 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private void CauHinhDanhSachNghiPhepView()
     {
+        CapNhatThongTinHienThiNghiPhep();
         DanhSachNghiPhepView = CollectionViewSource.GetDefaultView(DuLieu.NghiPhep);
         DanhSachNghiPhepView.Filter = obj => obj is NghiPhep nghiPhep && LocNghiPhepTheoBoLocManHinh(nghiPhep);
-        DanhSachNghiPhepView.SortDescriptions.Clear();
-        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.ThuTuTrangThai), ListSortDirection.Ascending));
-        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.ThuTuMoiNhat), ListSortDirection.Descending));
-        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.TuNgay), ListSortDirection.Descending));
-        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.DenNgay), ListSortDirection.Descending));
-        DanhSachNghiPhepView.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.NhanVien), ListSortDirection.Ascending));
+        SapXepDanhSachNghiPhep(DanhSachNghiPhepView);
         BaoThayDoi(nameof(DanhSachNghiPhepView));
+
+        DanhSachNghiPhepDaDuyetView = new ListCollectionView(DuLieu.NghiPhep);
+        DanhSachNghiPhepDaDuyetView.Filter = obj => obj is NghiPhep nghiPhep
+            && LocNghiPhepTheoBoLocManHinh(nghiPhep)
+            && QuyTacNghiepVuNhanSu.LaTrangThaiNghiPhepDaDuyet(nghiPhep.TrangThai);
+        SapXepDanhSachNghiPhep(DanhSachNghiPhepDaDuyetView);
+        BaoThayDoi(nameof(DanhSachNghiPhepDaDuyetView));
+
+        DanhSachDeNghiNghiPhepView = new ListCollectionView(DuLieu.NghiPhep);
+        DanhSachDeNghiNghiPhepView.Filter = obj => obj is NghiPhep nghiPhep
+            && LocNghiPhepTheoBoLocManHinh(nghiPhep)
+            && nghiPhep.DangChoDuyet;
+        SapXepDanhSachNghiPhep(DanhSachDeNghiNghiPhepView);
+        BaoThayDoi(nameof(DanhSachDeNghiNghiPhepView));
+    }
+
+    private static void SapXepDanhSachNghiPhep(ICollectionView danhSach)
+    {
+        danhSach.SortDescriptions.Clear();
+        danhSach.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.ThuTuTrangThai), ListSortDirection.Ascending));
+        danhSach.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.ThuTuMoiNhat), ListSortDirection.Descending));
+        danhSach.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.TuNgay), ListSortDirection.Descending));
+        danhSach.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.DenNgay), ListSortDirection.Descending));
+        danhSach.SortDescriptions.Add(new SortDescription(nameof(NghiPhep.NhanVien), ListSortDirection.Ascending));
     }
 
     private NhanVien? ChonNhanVienTrongPhamVi(int? maNhanVienDangChon = null, string? tenNhanVienDangChon = null)
@@ -1190,6 +1248,17 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         return nhanVien is not null && ThuocPhongBan(nhanVien.PhongBan, PhongBanNghiPhepDangChon);
     }
 
+    private void CapNhatThongTinHienThiNghiPhep()
+    {
+        foreach (var nghiPhep in DuLieu.NghiPhep)
+        {
+            var nhanVien = LayNhanVienTheoTen(nghiPhep.NhanVien);
+            nghiPhep.ChucVuPhongBan = nhanVien is null
+                ? "Chưa rõ"
+                : $"{nhanVien.ViTri} / {nhanVien.PhongBan}";
+        }
+    }
+
     private bool CoTheXuLyNghiPhep(object? thamSo)
     {
         return thamSo is NghiPhep nghiPhep
@@ -1200,7 +1269,32 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private bool LocDanhGia(DanhGia danhGia)
     {
-        return CoTheXemTheoTen(danhGia.NhanVien) || CoTheXemTheoTen(danhGia.NguoiDanhGia);
+        if (!CoTheXemTheoTen(danhGia.NhanVien) && !CoTheXemTheoTen(danhGia.NguoiDanhGia))
+        {
+            return false;
+        }
+
+        var nhanVien = LayNhanVienTheoTen(danhGia.NhanVien);
+        var phongBan = nhanVien?.PhongBan ?? "";
+        var viTri = nhanVien?.ViTri ?? "";
+
+        if (!ThuocPhongBan(phongBan, PhongBanDanhGiaDangChon))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(TuKhoaDanhGia))
+        {
+            return true;
+        }
+
+        var tuKhoa = TuKhoaDanhGia.Trim();
+        return ChuaTuKhoa(danhGia.NhanVien, tuKhoa)
+            || ChuaTuKhoa(danhGia.NguoiDanhGia, tuKhoa)
+            || ChuaTuKhoa(phongBan, tuKhoa)
+            || ChuaTuKhoa(viTri, tuKhoa)
+            || ChuaTuKhoa(danhGia.KyDanhGia, tuKhoa)
+            || ChuaTuKhoa(danhGia.TrangThai, tuKhoa);
     }
 
     private bool ThuocPhongBan(string phongBan, string boLoc)
@@ -1550,8 +1644,13 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private void LamMoiBoLocNghiPhep()
     {
+        CapNhatThongTinHienThiNghiPhep();
         DanhSachNghiPhepView.Refresh();
+        DanhSachNghiPhepDaDuyetView.Refresh();
+        DanhSachDeNghiNghiPhepView.Refresh();
         LamMoiLenhNghiPhep();
+        BaoThayDoi(nameof(DanhSachNghiPhepDaDuyetView));
+        BaoThayDoi(nameof(DanhSachDeNghiNghiPhepView));
         BaoThayDoi(nameof(SoNghiPhepDaLoc));
         BaoThayDoi(nameof(SoNghiPhepChoDuyetDaLoc));
         BaoThayDoi(nameof(SoNghiPhepDaDuyetDaLoc));
@@ -1575,6 +1674,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     {
         DanhSachDanhGiaView.Refresh();
         LamMoiLenhDanhGia();
+        BaoThayDoi(nameof(DanhSachDanhGiaView));
         BaoThayDoi(nameof(CaNhanXuatSacHoSoHienThi));
         BaoThayDoi(nameof(CaNhanXuatSacNhat));
         BaoThayDoi(nameof(CaNhanXuatSacHienThi));
@@ -4007,10 +4107,17 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             BaoThayDoi(nameof(PhongBanNghiPhepDangChon));
         }
 
+        if (!CacPhongBanTraCuu.Contains(PhongBanDanhGiaDangChon, StringComparer.OrdinalIgnoreCase))
+        {
+            phongBanDanhGiaDangChon = TatCaPhongBan;
+            BaoThayDoi(nameof(PhongBanDanhGiaDangChon));
+        }
+
         LamMoiBoLocNhanVien();
         LamMoiBoLocBangLuong();
         LamMoiBoLocChamCong();
         LamMoiBoLocNghiPhep();
+        LamMoiBoLocDanhGia();
 
         DanhSachNhanSuTraCuu = new ObservableCollection<DongTraCuuNhanSu>(
             tatCaNhanSu

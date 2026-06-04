@@ -1081,9 +1081,10 @@
                                                 <Border DockPanel.Dock="Top" Background="#FFFFFF" BorderBrush="{StaticResource MauVien}" BorderThickness="0,0,0,1" Padding="18,10">
                                                     <TextBlock Text="{Binding MoTaBoLocNghiPhep}" Foreground="#172033" FontWeight="SemiBold"/>
                                                 </Border>
-                                                <DataGrid ItemsSource="{Binding DanhSachNghiPhepView}" SelectedItem="{Binding NghiPhepDangChon}">
+                                                <DataGrid ItemsSource="{Binding DanhSachDeNghiNghiPhepView}" SelectedItem="{Binding NghiPhepDangChon}">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="Nhân viên" Binding="{Binding NhanVien}" Width="145"/>
+                                                        <DataGridTextColumn Header="Chức vụ/Phòng ban" Binding="{Binding ChucVuPhongBan}" Width="210"/>
                                                         <DataGridTextColumn Header="Loại nghỉ" Binding="{Binding LoaiNghi}" Width="130"/>
                                                         <DataGridTextColumn Header="Từ ngày" Binding="{Binding TuNgay, StringFormat=dd/MM/yyyy}" Width="90"/>
                                                         <DataGridTextColumn Header="Đến ngày" Binding="{Binding DenNgay, StringFormat=dd/MM/yyyy}" Width="90"/>
@@ -1118,11 +1119,50 @@
                                             </DockPanel>
                                         </Border>
                                     </TabItem>
+
+                                    <TabItem Header="Đơn đã duyệt">
+                                        <Border Style="{StaticResource TheThongKe}" Padding="0">
+                                            <DockPanel>
+                                                <StackPanel DockPanel.Dock="Top" Margin="22,20,22,14">
+                                                    <TextBlock Text="Danh sách nghỉ phép đã duyệt" Style="{StaticResource TieuDeKhuVuc}"/>
+                                                    <TextBlock Text="Các đơn đã duyệt theo kỳ và phòng ban đang lọc." Style="{StaticResource MoTaNho}"/>
+                                                </StackPanel>
+                                                <Border DockPanel.Dock="Top" Style="{StaticResource VienCongCu}">
+                                                    <WrapPanel>
+                                                        <StackPanel Width="170" Margin="0,0,12,10">
+                                                            <TextBlock Text="KỲ NGHỈ PHÉP" Style="{StaticResource NhanTruong}"/>
+                                                            <ComboBox ItemsSource="{Binding CacKyBaoCaoNhanSu}" SelectedItem="{Binding KyNghiPhepDangChon, Mode=TwoWay}" Padding="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Width="210" Margin="0,0,12,10">
+                                                            <TextBlock Text="PHÒNG BAN" Style="{StaticResource NhanTruong}"/>
+                                                            <ComboBox ItemsSource="{Binding CacPhongBanTraCuu}" SelectedItem="{Binding PhongBanNghiPhepDangChon, Mode=TwoWay}" Padding="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,10">
+                                                            <TextBlock Text="{Binding SoNghiPhepDaDuyetDaLoc, StringFormat=Đã duyệt: {0}}" Foreground="#0F766E" FontWeight="SemiBold" Margin="0,0,18,0"/>
+                                                            <TextBlock Text="{Binding SoNgayNghiPhepDaLoc, StringFormat=Tổng ngày theo bộ lọc: {0:N2}}" Foreground="#2563EB" FontWeight="SemiBold"/>
+                                                        </StackPanel>
+                                                    </WrapPanel>
+                                                </Border>
+                                                <DataGrid ItemsSource="{Binding DanhSachNghiPhepDaDuyetView}" SelectedItem="{Binding NghiPhepDangChon}">
+                                                    <DataGrid.Columns>
+                                                        <DataGridTextColumn Header="Nhân viên" Binding="{Binding NhanVien}" Width="190"/>
+                                                        <DataGridTextColumn Header="Chức vụ/Phòng ban" Binding="{Binding ChucVuPhongBan}" Width="230"/>
+                                                        <DataGridTextColumn Header="Loại nghỉ" Binding="{Binding LoaiNghi}" Width="150"/>
+                                                        <DataGridTextColumn Header="Từ ngày" Binding="{Binding TuNgay, StringFormat=dd/MM/yyyy}" Width="110"/>
+                                                        <DataGridTextColumn Header="Đến ngày" Binding="{Binding DenNgay, StringFormat=dd/MM/yyyy}" Width="110"/>
+                                                        <DataGridTextColumn Header="Số ngày" Binding="{Binding SoNgay}" Width="80"/>
+                                                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="120"/>
+                                                        <DataGridTextColumn Header="Ghi chú xử lý" Binding="{Binding LyDoXuLy}" Width="*"/>
+                                                    </DataGrid.Columns>
+                                                </DataGrid>
+                                            </DockPanel>
+                                        </Border>
+                                    </TabItem>
                                 </TabControl>
                             </Grid>
 
                             <Grid Visibility="{Binding MucDangChon, Converter={StaticResource HienThiTheoMuc}, ConverterParameter=Đánh giá}">
-                                <TabControl Style="{StaticResource TabPhanHe}" ItemContainerStyle="{StaticResource TabPhanHeItem}">
+                                <TabControl Style="{StaticResource TabPhanHe}" ItemContainerStyle="{StaticResource TabPhanHeItem}" SelectedIndex="{Binding TabDanhGiaDangChon, Mode=TwoWay}">
                                     <TabItem Header="Phiếu đánh giá">
                                         <Border Style="{StaticResource TheThongKe}">
                                             <StackPanel MaxWidth="760">
@@ -1182,21 +1222,32 @@
                                                 </Grid>
 
                                                 <Border DockPanel.Dock="Top" Style="{StaticResource VienCongCu}">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Button Content="Nạp để sửa" Command="{Binding SuaDanhGiaLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
-                                                        <Button Content="Chốt kết quả" Command="{Binding ChotDanhGiaLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
-                                                        <Button Content="Xóa đánh giá" Command="{Binding XoaDanhGiaLenh}" Style="{StaticResource NutNguyHiem}"/>
-                                                    </StackPanel>
+                                                    <WrapPanel>
+                                                        <StackPanel Width="230" Margin="0,0,12,10">
+                                                            <TextBlock Text="TÌM ĐÁNH GIÁ" Style="{StaticResource NhanTruong}"/>
+                                                            <TextBox Text="{Binding TuKhoaDanhGia, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}" Padding="10"
+                                                                     ToolTip="Tìm theo nhân viên, người đánh giá, phòng ban, chức vụ, kỳ hoặc trạng thái"/>
+                                                        </StackPanel>
+                                                        <StackPanel Width="210" Margin="0,0,14,10">
+                                                            <TextBlock Text="PHÒNG BAN" Style="{StaticResource NhanTruong}"/>
+                                                            <ComboBox ItemsSource="{Binding CacPhongBanTraCuu}" SelectedItem="{Binding PhongBanDanhGiaDangChon, Mode=TwoWay}" Padding="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,10">
+                                                            <Button Content="Nạp để sửa" Command="{Binding SuaDanhGiaLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
+                                                            <Button Content="Chốt kết quả" Command="{Binding ChotDanhGiaLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
+                                                            <Button Content="Xóa đánh giá" Command="{Binding XoaDanhGiaLenh}" Style="{StaticResource NutNguyHiem}"/>
+                                                        </StackPanel>
+                                                    </WrapPanel>
                                                 </Border>
 
                                                 <DataGrid ItemsSource="{Binding DanhSachDanhGiaView}" SelectedItem="{Binding DanhGiaDangChon}">
                                                     <DataGrid.Columns>
-                                                        <DataGridTextColumn Header="Nhân viên" Binding="{Binding NhanVien}" Width="150"/>
-                                                        <DataGridTextColumn Header="Người đánh giá" Binding="{Binding NguoiDanhGia}" Width="150"/>
-                                                        <DataGridTextColumn Header="Kỳ" Binding="{Binding KyDanhGia}" Width="90"/>
-                                                        <DataGridTextColumn Header="Điểm" Binding="{Binding Diem, StringFormat=N1}" Width="55"/>
+                                                        <DataGridTextColumn Header="Nhân viên" Binding="{Binding NhanVien}" Width="190"/>
+                                                        <DataGridTextColumn Header="Người đánh giá" Binding="{Binding NguoiDanhGia}" Width="190"/>
+                                                        <DataGridTextColumn Header="Kỳ" Binding="{Binding KyDanhGia}" Width="110"/>
+                                                        <DataGridTextColumn Header="Điểm" Binding="{Binding Diem, StringFormat=N1}" Width="80"/>
                                                         <DataGridTextColumn Header="Nhận xét" Binding="{Binding NhanXet}" Width="*"/>
-                                                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="100"/>
+                                                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="130"/>
                                                     </DataGrid.Columns>
                                                 </DataGrid>
                                             </DockPanel>

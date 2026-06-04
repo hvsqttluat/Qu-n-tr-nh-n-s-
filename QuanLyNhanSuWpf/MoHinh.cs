@@ -141,6 +141,7 @@ public record ViTriCongViec(int MaViTri, int MaPhongBan, string TenViTri, decima
 public record NghiPhep(string NhanVien, string LoaiNghi, DateTime TuNgay, DateTime DenNgay, decimal SoNgay, string TrangThai, int MaDon = 0, string LyDoXuLyBanDau = "")
 {
     public string LyDoXuLy { get; set; } = LyDoXuLyBanDau;
+    public string ChucVuPhongBan { get; set; } = "Chưa rõ";
     public int ThuTuTrangThai => TrangThai.Contains("Chờ", StringComparison.OrdinalIgnoreCase) ? 0 : 1;
     public int ThuTuMoiNhat => MaDon;
     public bool DangChoDuyet => ThuTuTrangThai == 0;
