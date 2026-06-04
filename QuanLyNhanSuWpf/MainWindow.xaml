@@ -150,25 +150,38 @@
                             <StackPanel>
                             <TextBlock Text="PHÂN HỆ" Foreground="#A7C7D0" FontSize="11" FontWeight="Bold" Margin="4,0,0,8"/>
                             <RadioButton Content="Tổng quan vận hành" GroupName="Menu" IsChecked="{Binding DangXemTongQuan, Mode=OneWay}" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Tổng quan"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Tổng quan"
+                                         Visibility="{Binding CoQuyenTongQuan, Converter={StaticResource HienThiTheoBool}}"/>
                             <RadioButton Content="Tuyển dụng" GroupName="Menu" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Ứng viên" IsEnabled="{Binding CoQuyenTuyenDung}"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Ứng viên" IsEnabled="{Binding CoQuyenTuyenDung}"
+                                         Visibility="{Binding CoQuyenTuyenDung, Converter={StaticResource HienThiTheoBool}}"/>
                             <RadioButton Content="Hồ sơ nhân viên" GroupName="Menu" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Nhân viên" IsEnabled="{Binding CoQuyenHoSoNhanVien}"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Nhân viên" IsEnabled="{Binding CoQuyenHoSoNhanVien}"
+                                         Visibility="{Binding CoQuyenHoSoNhanVien, Converter={StaticResource HienThiTheoBool}}"/>
+                            <RadioButton Content="Thông báo" GroupName="Menu" Style="{StaticResource NutThanhBen}"
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Thông báo" IsEnabled="{Binding CoQuyenThongBao}"
+                                         Visibility="{Binding CoQuyenThongBao, Converter={StaticResource HienThiTheoBool}}"/>
                             <RadioButton Content="Cơ cấu phòng ban" GroupName="Menu" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Phòng ban" IsEnabled="{Binding CoQuyenPhongBan}"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Phòng ban" IsEnabled="{Binding CoQuyenPhongBan}"
+                                         Visibility="{Binding CoQuyenPhongBan, Converter={StaticResource HienThiTheoBool}}"/>
                             <RadioButton Content="Chấm công" GroupName="Menu" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Chấm công" IsEnabled="{Binding CoQuyenChamCong}"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Chấm công" IsEnabled="{Binding CoQuyenChamCong}"
+                                         Visibility="{Binding CoQuyenChamCong, Converter={StaticResource HienThiTheoBool}}"/>
                             <RadioButton Content="Nghỉ phép" GroupName="Menu" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Nghỉ phép" IsEnabled="{Binding CoQuyenNghiPhep}"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Nghỉ phép" IsEnabled="{Binding CoQuyenNghiPhep}"
+                                         Visibility="{Binding CoQuyenNghiPhep, Converter={StaticResource HienThiTheoBool}}"/>
                             <RadioButton Content="Đánh giá năng lực" GroupName="Menu" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Đánh giá" IsEnabled="{Binding CoQuyenDanhGia}"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Đánh giá" IsEnabled="{Binding CoQuyenDanhGia}"
+                                         Visibility="{Binding CoQuyenDanhGia, Converter={StaticResource HienThiTheoBool}}"/>
                             <RadioButton Content="Bảng lương" GroupName="Menu" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Bảng lương" IsEnabled="{Binding CoQuyenBangLuong}"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Bảng lương" IsEnabled="{Binding CoQuyenBangLuong}"
+                                         Visibility="{Binding CoQuyenBangLuong, Converter={StaticResource HienThiTheoBool}}"/>
                             <RadioButton Content="Báo cáo nhân sự" GroupName="Menu" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Báo cáo" IsEnabled="{Binding CoQuyenBaoCaoNhanSu}"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Báo cáo" IsEnabled="{Binding CoQuyenBaoCaoNhanSu}"
+                                         Visibility="{Binding CoQuyenBaoCaoNhanSu, Converter={StaticResource HienThiTheoBool}}"/>
                             <RadioButton Content="Cài đặt tài khoản" GroupName="Menu" Style="{StaticResource NutThanhBen}"
-                                         Command="{Binding ChonMucLenh}" CommandParameter="Cài đặt tài khoản" IsEnabled="{Binding CoQuyenCaiDatTaiKhoan}"/>
+                                         Command="{Binding ChonMucLenh}" CommandParameter="Cài đặt tài khoản" IsEnabled="{Binding CoQuyenCaiDatTaiKhoan}"
+                                         Visibility="{Binding CoQuyenCaiDatTaiKhoan, Converter={StaticResource HienThiTheoBool}}"/>
                             </StackPanel>
                         </ScrollViewer>
 
@@ -227,7 +240,8 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <Button Content="Tạo thông báo" Command="{Binding TaoThongBaoThuLenh}" Style="{StaticResource NutPhu}" Padding="10,7" Margin="0,0,0,6"
-                                                ToolTip="Admin, Giám đốc và Trưởng phòng được tạo thông báo. Nhân viên chỉ xem."/>
+                                                ToolTip="Admin, Giám đốc, Trưởng phòng và Nhân sự được tạo thông báo."
+                                                Visibility="{Binding CoQuyenTaoThongBao, Converter={StaticResource HienThiTheoBool}}"/>
                                         <Button Content="Tải lại" Command="{Binding TaiLaiLenh}" Style="{StaticResource NutPhu}" Padding="10,7" Margin="0,0,0,6"/>
                                         <Button Content="Đăng xuất" Click="DangXuat_Click" Style="{StaticResource NutNguyHiem}" Padding="10,7"/>
                                     </StackPanel>
@@ -471,7 +485,8 @@
                                                     <TextBlock Text="{Binding SoThongBaoChuaDoc, StringFormat={}{0} thông báo chưa đọc}" Style="{StaticResource MoTaNho}" Margin="0,4,0,0"/>
                                                 </StackPanel>
                                                 <Button Grid.Column="1" Content="Tạo thông báo" Command="{Binding TaoThongBaoThuLenh}" Style="{StaticResource NutPhu}" VerticalAlignment="Top"
-                                                        ToolTip="Admin, Giám đốc và Trưởng phòng được tạo thông báo. Nhân viên chỉ xem."/>
+                                                        ToolTip="Admin, Giám đốc, Trưởng phòng và Nhân sự được tạo thông báo."
+                                                        Visibility="{Binding CoQuyenTaoThongBao, Converter={StaticResource HienThiTheoBool}}"/>
                                             </Grid>
 
                                             <Border DockPanel.Dock="Top" Style="{StaticResource VienCongCu}">
@@ -601,6 +616,81 @@
                                 </Grid>
                             </Grid>
 
+                            <Grid Visibility="{Binding MucDangChon, Converter={StaticResource HienThiTheoMuc}, ConverterParameter=Thông báo}">
+                                <Border Style="{StaticResource TheThongKe}" Padding="0">
+                                    <DockPanel>
+                                        <Grid DockPanel.Dock="Top" Margin="22,20,22,14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="Trung tâm thông báo" Style="{StaticResource TieuDeKhuVuc}"/>
+                                                <TextBlock Text="{Binding SoThongBaoChuaDoc, StringFormat={}{0} thông báo chưa đọc}" Style="{StaticResource MoTaNho}" Margin="0,4,0,0"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Tạo thông báo" Command="{Binding TaoThongBaoThuLenh}" Style="{StaticResource NutPhu}" VerticalAlignment="Top"
+                                                    Visibility="{Binding CoQuyenTaoThongBao, Converter={StaticResource HienThiTheoBool}}"/>
+                                        </Grid>
+
+                                        <Border DockPanel.Dock="Top" Style="{StaticResource VienCongCu}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Style="{StaticResource OThongTin}" Text="{Binding TuKhoaThongBao, UpdateSourceTrigger=PropertyChanged}" ToolTip="Tìm theo tiêu đề, nội dung, phân hệ hoặc mức độ"/>
+                                                <CheckBox Grid.Column="1" Content="Chỉ hiện chưa đọc" IsChecked="{Binding ChiThongBaoChuaDoc}" VerticalAlignment="Center" Margin="16,0,0,0" FontWeight="SemiBold" Foreground="#1F6F78"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="22,16,22,22">
+                                            <ItemsControl ItemsSource="{Binding DanhSachThongBaoView}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border BorderBrush="#D8E0EA" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,10" Background="#FFFFFF" Cursor="Hand"
+                                                                MouseLeftButtonUp="ThongBao_MouseLeftButtonUp">
+                                                            <Grid>
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                </Grid.RowDefinitions>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding TieuDe}" FontWeight="SemiBold" Foreground="#172033"/>
+                                                                    <TextBlock Text="{Binding NoiDung}" Style="{StaticResource MoTaNho}" Margin="0,4,0,0"/>
+                                                                </StackPanel>
+                                                                <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                                                                    <CheckBox Content="Đã đọc" IsChecked="{Binding DaDoc, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                              Command="{Binding DataContext.CapNhatDocThongBaoLenh, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                              CommandParameter="{Binding}" Margin="0,0,0,8"/>
+                                                                    <Button Content="Mở" Command="{Binding DataContext.MoThongBaoLenh, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                            CommandParameter="{Binding}" Style="{StaticResource NutPhu}" Padding="12,6"/>
+                                                                </StackPanel>
+                                                                <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,10,0,0">
+                                                                    <TextBlock Text="{Binding PhanHe}" Foreground="#2563EB" FontSize="12" FontWeight="SemiBold"/>
+                                                                    <TextBlock Text=" - " Foreground="#94A3B8"/>
+                                                                    <TextBlock Text="{Binding MucDo}" Foreground="#0F766E" FontSize="12" FontWeight="SemiBold"/>
+                                                                    <TextBlock Text=" - " Foreground="#94A3B8"/>
+                                                                    <TextBlock Text="{Binding ThoiGian, StringFormat={}{0:HH:mm dd/MM/yyyy}}" Foreground="{StaticResource MauChuPhu}" FontSize="12"/>
+                                                                    <TextBlock Text=" - " Foreground="#94A3B8"/>
+                                                                    <TextBlock Text="{Binding TrangThaiDoc}" Foreground="#B45309" FontSize="12" FontWeight="SemiBold"/>
+                                                                    <Button Content="{Binding TepDinhKemHienThi}" Visibility="{Binding CoTepDinhKem, Converter={StaticResource HienThiTheoBool}}"
+                                                                            Command="{Binding DataContext.MoTepThongBaoLenh, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                            CommandParameter="{Binding}" Style="{StaticResource NutPhu}" Padding="10,6" Margin="14,0,0,0"/>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
+
                             <Grid Visibility="{Binding MucDangChon, Converter={StaticResource HienThiTheoMuc}, ConverterParameter=Nhân viên}">
                                 <TabControl Style="{StaticResource TabPhanHe}" ItemContainerStyle="{StaticResource TabPhanHeItem}" SelectedIndex="{Binding TabNhanVienDangChon, Mode=TwoWay}">
                                     <TabItem Header="Danh sách hồ sơ">
@@ -615,11 +705,11 @@
                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,14,10">
                                                             <Button Content="Tạo mới" Command="{Binding ThemMoiLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"
                                                                     Visibility="{Binding CoQuyenQuanLyHoSoNhanVien, Converter={StaticResource HienThiTheoBool}}"/>
-                                                            <Button Content="Nạp dòng chọn" Command="{Binding SuaLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
+                                                            <Button Content="Sửa hồ sơ" Command="{Binding SuaLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
                                                             <Button Content="Chuyển phòng ban/chức vụ" Command="{Binding SuaLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"
-                                                                    Visibility="{Binding CoQuyenQuanLyHoSoNhanVien, Converter={StaticResource HienThiTheoBool}}"/>
+                                                                    Visibility="Collapsed"/>
                                                             <Button Content="Lưu hồ sơ" Command="{Binding LuuLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"
-                                                                    Visibility="{Binding CoQuyenQuanLyHoSoNhanVien, Converter={StaticResource HienThiTheoBool}}"/>
+                                                                    Visibility="Collapsed"/>
                                                             <Button Content="Cho nghỉ việc" Command="{Binding XoaLenh}" Style="{StaticResource NutNguyHiem}"
                                                                     Visibility="{Binding CoQuyenQuanLyHoSoNhanVien, Converter={StaticResource HienThiTheoBool}}"/>
                                                         </StackPanel>
@@ -675,7 +765,7 @@
                                         </Border>
                                     </TabItem>
 
-                                    <TabItem Header="Phiếu thông tin">
+                                    <TabItem Header="Phiếu thông tin" Visibility="Collapsed">
                                         <Border Style="{StaticResource TheThongKe}">
                                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                                 <StackPanel MaxWidth="760">
@@ -732,6 +822,7 @@
                                                 <Border DockPanel.Dock="Top" Style="{StaticResource VienCongCu}">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Button Content="Tạo mới" Command="{Binding TaoPhongBanLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
+                                                        <Button Content="Sửa phòng ban" Command="{Binding SuaPhongBanLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
                                                         <Button Content="Xóa" Command="{Binding XoaPhongBanLenh}" Style="{StaticResource NutNguyHiem}" Margin="0,0,8,0"/>
                                                         <Button Content="Làm mới" Command="{Binding TaiLaiLenh}" Style="{StaticResource NutPhu}"/>
                                                     </StackPanel>
@@ -756,7 +847,7 @@
                                         </Border>
                                     </TabItem>
 
-                                    <TabItem Header="Phiếu phòng ban">
+                                    <TabItem Header="Phiếu phòng ban" Visibility="Collapsed">
                                         <Border Style="{StaticResource TheThongKe}">
                                             <StackPanel MaxWidth="620">
                                                 <TextBlock Text="Phiếu phòng ban" Style="{StaticResource TieuDeKhuVuc}"/>
@@ -792,9 +883,10 @@
                                                 </StackPanel>
                                                 <Border DockPanel.Dock="Top" Style="{StaticResource VienCongCu}">
                                                     <StackPanel Orientation="Horizontal">
+                                                        <Button Content="Tạo ứng viên" Command="{Binding TaoMoiUngVienLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
                                                         <Button Content="Chuyển bước tuyển dụng" Command="{Binding ChuyenGiaiDoanUngVienLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"
                                                                 ToolTip="Mới → Sàng lọc hồ sơ → Phỏng vấn → Đề nghị nhận việc"/>
-                                                        <Button Content="Nạp dòng chọn" Command="{Binding SuaUngVienLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
+                                                        <Button Content="Sửa ứng viên" Command="{Binding SuaUngVienLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
                                                         <Button Content="Tiếp nhận thành nhân viên" Command="{Binding ChuyenUngVienThanhNhanVienLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"
                                                                 ToolTip="Chỉ dùng khi ứng viên ở giai đoạn Đề nghị nhận việc. Sau khi tiếp nhận, ứng viên rời khỏi danh sách tuyển dụng."/>
                                                         <Button Content="Xuất hợp đồng làm việc" Command="{Binding XuatHopDongLamViecLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
@@ -814,7 +906,7 @@
                                         </Border>
                                     </TabItem>
 
-                                    <TabItem Header="Phiếu tuyển dụng">
+                                    <TabItem Header="Phiếu tuyển dụng" Visibility="Collapsed">
                                         <Border Style="{StaticResource TheThongKe}">
                                             <StackPanel MaxWidth="620">
                                                 <TextBlock Text="Phiếu tuyển dụng" Style="{StaticResource TieuDeKhuVuc}"/>
@@ -901,9 +993,7 @@
                                                 </Grid>
 
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                                    <Button Content="Vào ca" Command="{Binding VaoCaLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
-                                                    <Button Content="Ra ca" Command="{Binding RaCaLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
-                                                    <Button Content="Điều chỉnh công đã chọn" Command="{Binding DieuChinhCongLenh}" Style="{StaticResource NutPhu}"/>
+                                                    <Button Content="Mở cửa sổ chấm công" Command="{Binding MoChamCongLenh}" Style="{StaticResource NutChinh}"/>
                                                 </StackPanel>
 
                                                 <Grid>
@@ -1029,8 +1119,8 @@
                             </Grid>
 
                             <Grid Visibility="{Binding MucDangChon, Converter={StaticResource HienThiTheoMuc}, ConverterParameter=Nghỉ phép}">
-                                <TabControl Style="{StaticResource TabPhanHe}" ItemContainerStyle="{StaticResource TabPhanHeItem}">
-                                    <TabItem Header="Tạo đơn nghỉ">
+                                <TabControl Style="{StaticResource TabPhanHe}" ItemContainerStyle="{StaticResource TabPhanHeItem}" SelectedIndex="1">
+                                    <TabItem Header="Tạo đơn nghỉ" Visibility="Collapsed">
                                         <Border Style="{StaticResource TheThongKe}">
                                             <StackPanel MaxWidth="620">
                                                 <TextBlock Text="Tạo đơn nghỉ" Style="{StaticResource TieuDeKhuVuc}"/>
@@ -1066,8 +1156,11 @@
                                                             <ComboBox ItemsSource="{Binding CacPhongBanTraCuu}" SelectedItem="{Binding PhongBanNghiPhepDangChon, Mode=TwoWay}" Padding="10"/>
                                                         </StackPanel>
                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,18,10">
-                                                            <Button Content="Duyệt đơn" Command="{Binding DuyetNghiPhepLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
-                                                            <Button Content="Từ chối" Command="{Binding TuChoiNghiPhepLenh}" Style="{StaticResource NutNguyHiem}" Margin="0,0,8,0"/>
+                                                            <Button Content="Tạo đơn nghỉ" Command="{Binding MoTaoNghiPhepLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
+                                                            <Button Content="Duyệt đơn" Command="{Binding DuyetNghiPhepLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"
+                                                                    Visibility="{Binding CoQuyenDuyetNghiPhep, Converter={StaticResource HienThiTheoBool}}"/>
+                                                            <Button Content="Từ chối" Command="{Binding TuChoiNghiPhepLenh}" Style="{StaticResource NutNguyHiem}" Margin="0,0,8,0"
+                                                                    Visibility="{Binding CoQuyenDuyetNghiPhep, Converter={StaticResource HienThiTheoBool}}"/>
                                                             <Button Content="Làm mới" Command="{Binding TaiLaiLenh}" Style="{StaticResource NutPhu}"/>
                                                         </StackPanel>
                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,10">
@@ -1163,7 +1256,7 @@
 
                             <Grid Visibility="{Binding MucDangChon, Converter={StaticResource HienThiTheoMuc}, ConverterParameter=Đánh giá}">
                                 <TabControl Style="{StaticResource TabPhanHe}" ItemContainerStyle="{StaticResource TabPhanHeItem}" SelectedIndex="{Binding TabDanhGiaDangChon, Mode=TwoWay}">
-                                    <TabItem Header="Phiếu đánh giá">
+                                    <TabItem Header="Phiếu đánh giá" Visibility="Collapsed">
                                         <Border Style="{StaticResource TheThongKe}">
                                             <StackPanel MaxWidth="760">
                                                 <TextBlock Text="Phiếu đánh giá" Style="{StaticResource TieuDeKhuVuc}"/>
@@ -1233,9 +1326,14 @@
                                                             <ComboBox ItemsSource="{Binding CacPhongBanTraCuu}" SelectedItem="{Binding PhongBanDanhGiaDangChon, Mode=TwoWay}" Padding="10"/>
                                                         </StackPanel>
                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,10">
-                                                            <Button Content="Nạp để sửa" Command="{Binding SuaDanhGiaLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
-                                                            <Button Content="Chốt kết quả" Command="{Binding ChotDanhGiaLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
-                                                            <Button Content="Xóa đánh giá" Command="{Binding XoaDanhGiaLenh}" Style="{StaticResource NutNguyHiem}"/>
+                                                            <Button Content="Tạo đánh giá" Command="{Binding TaoMoiDanhGiaLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"
+                                                                    Visibility="{Binding CoQuyenGhiNhanDanhGia, Converter={StaticResource HienThiTheoBool}}"/>
+                                                            <Button Content="Sửa đánh giá" Command="{Binding SuaDanhGiaLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"
+                                                                    Visibility="{Binding CoQuyenGhiNhanDanhGia, Converter={StaticResource HienThiTheoBool}}"/>
+                                                            <Button Content="Chốt kết quả" Command="{Binding ChotDanhGiaLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"
+                                                                    Visibility="{Binding CoQuyenGhiNhanDanhGia, Converter={StaticResource HienThiTheoBool}}"/>
+                                                            <Button Content="Xóa đánh giá" Command="{Binding XoaDanhGiaLenh}" Style="{StaticResource NutNguyHiem}"
+                                                                    Visibility="{Binding CoQuyenGhiNhanDanhGia, Converter={StaticResource HienThiTheoBool}}"/>
                                                         </StackPanel>
                                                     </WrapPanel>
                                                 </Border>
@@ -1258,7 +1356,7 @@
 
                             <Grid Visibility="{Binding MucDangChon, Converter={StaticResource HienThiTheoMuc}, ConverterParameter=Bảng lương}">
                                 <TabControl Style="{StaticResource TabPhanHe}" ItemContainerStyle="{StaticResource TabPhanHeItem}" SelectedIndex="1">
-                                    <TabItem Header="Phiếu tính lương">
+                                    <TabItem Header="Phiếu tính lương" Visibility="Collapsed">
                                         <Border Style="{StaticResource TheThongKe}">
                                             <StackPanel MaxWidth="720">
                                                 <TextBlock Text="Tính lương nhân viên" Style="{StaticResource TieuDeKhuVuc}"/>
@@ -1306,6 +1404,8 @@
                                                             <ComboBox ItemsSource="{Binding CacPhongBanTraCuu}" SelectedItem="{Binding PhongBanBangLuongDangChon, Mode=TwoWay}" Padding="10"/>
                                                         </StackPanel>
                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,10">
+                                                            <Button Content="Tính lương" Command="{Binding MoTinhLuongLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"
+                                                                    Visibility="{Binding CoQuyenXuLyBangLuong, Converter={StaticResource HienThiTheoBool}}"/>
                                                             <Button Content="Xem phiếu lương" Command="{Binding XemPhieuLuongLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
                                                             <Button Content="Xác nhận đã chi trả" Command="{Binding XacNhanTraLuongLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"
                                                                     Visibility="{Binding CoQuyenXuLyBangLuong, Converter={StaticResource HienThiTheoBool}}"/>
@@ -1488,8 +1588,8 @@
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="2*"/>
-                                                        <ColumnDefinition Width="22"/>
-                                                        <ColumnDefinition Width="360"/>
+                                                        <ColumnDefinition Width="0"/>
+                                                        <ColumnDefinition Width="0"/>
                                                     </Grid.ColumnDefinitions>
                                                     <DataGrid ItemsSource="{Binding CacTaiKhoanHeThong}" SelectedItem="{Binding TaiKhoanDangChon}">
                                                         <DataGrid.Columns>
@@ -1501,7 +1601,7 @@
                                                             <DataGridTextColumn Header="Đăng nhập gần nhất" Binding="{Binding LanDangNhapGanNhat, StringFormat=HH:mm dd/MM/yyyy}" Width="150"/>
                                                         </DataGrid.Columns>
                                                     </DataGrid>
-                                                    <Border Grid.Column="2" BorderBrush="{StaticResource MauVien}" BorderThickness="1,0,0,0" Padding="18,16">
+                                                    <Border Grid.Column="2" BorderBrush="{StaticResource MauVien}" BorderThickness="1,0,0,0" Padding="18,16" Visibility="Collapsed">
                                                         <StackPanel>
                                                             <TextBlock Text="{Binding BieuMauTaiKhoan.TieuDe}" Style="{StaticResource TieuDeKhuVuc}"/>
                                                             <TextBlock Text="Nhập thông tin tài khoản, vai trò và mật khẩu mới nếu cần đổi." Style="{StaticResource MoTaNho}" Margin="0,4,0,16"/>

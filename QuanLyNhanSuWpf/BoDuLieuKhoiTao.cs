@@ -26,9 +26,9 @@ public static class BoDuLieuKhoiTao
         new("Ban Giám đốc", "GD001"),
         new("Phòng Kinh doanh", "TP001"),
         new("Phòng Sản xuất", "TP002"),
-        new("Phòng Kế toán", "NV003"),
+        new("Phòng Kế toán", "TP006"),
         new("Phòng Nhân sự", "TP003"),
-        new("Phòng Marketing", "NV006"),
+        new("Phòng Marketing", "TP007"),
         new("Phòng Hành chính", "TP004"),
         new("Phòng Pháp chế", "TP005")
     ];
@@ -38,8 +38,10 @@ public static class BoDuLieuKhoiTao
         new("Ban Giám đốc", "Giám đốc điều hành", 55_000_000),
         new("Phòng Kinh doanh", "Trưởng phòng Kinh doanh", 28_000_000),
         new("Phòng Sản xuất", "Trưởng phòng Sản xuất", 30_000_000),
+        new("Phòng Kế toán", "Trưởng phòng Kế toán", 25_000_000),
         new("Phòng Kế toán", "Kế toán tổng hợp", 16_000_000),
         new("Phòng Nhân sự", "Trưởng phòng Nhân sự", 26_000_000),
+        new("Phòng Marketing", "Trưởng phòng Marketing", 25_000_000),
         new("Phòng Marketing", "Nhân viên Marketing", 15_000_000),
         new("Phòng Hành chính", "Trưởng phòng Hành chính", 24_000_000),
         new("Phòng Pháp chế", "Trưởng phòng Pháp chế", 29_000_000),
@@ -60,7 +62,9 @@ public static class BoDuLieuKhoiTao
             new("TP002", "Phạm Văn Long", "Phòng Sản xuất", "Trưởng phòng Sản xuất", "GD001", 30_000_000, new DateTime(1986, 11, 5), new DateTime(2024, 2, 5), new DateTime(2013, 8, 1)),
             new("TP003", "Lê Thu Hà", "Phòng Nhân sự", "Trưởng phòng Nhân sự", "GD001", 26_000_000, new DateTime(1990, 4, 22), new DateTime(2024, 2, 10), new DateTime(2016, 3, 1)),
             new("TP004", "Đỗ Thị Mai", "Phòng Hành chính", "Trưởng phòng Hành chính", "GD001", 24_000_000, new DateTime(1989, 9, 14), new DateTime(2024, 2, 15), new DateTime(2015, 5, 1)),
-            new("TP005", "Vũ Anh Tuấn", "Phòng Pháp chế", "Trưởng phòng Pháp chế", "GD001", 29_000_000, new DateTime(1987, 6, 2), new DateTime(2024, 2, 20), new DateTime(2014, 9, 1))
+            new("TP005", "Vũ Anh Tuấn", "Phòng Pháp chế", "Trưởng phòng Pháp chế", "GD001", 29_000_000, new DateTime(1987, 6, 2), new DateTime(2024, 2, 20), new DateTime(2014, 9, 1)),
+            new("TP006", "Bùi Thu Trang", "Phòng Kế toán", "Trưởng phòng Kế toán", "GD001", 25_000_000, new DateTime(1995, 10, 16), new DateTime(2025, 3, 3), new DateTime(2021, 7, 1)),
+            new("TP007", "Mai Ngọc Linh", "Phòng Marketing", "Trưởng phòng Marketing", "GD001", 25_000_000, new DateTime(1998, 7, 7), new DateTime(2025, 6, 6), new DateTime(2018, 1, 1))
         };
         var tenDaDung = danhSach.Select(nhanSu => nhanSu.HoTen).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -68,10 +72,10 @@ public static class BoDuLieuKhoiTao
         {
             ("Phòng Kinh doanh", "Nhân viên kinh doanh", "TP001", 14_000_000m),
             ("Phòng Sản xuất", "Nhân viên kế hoạch sản xuất", "TP002", 13_500_000m),
-            ("Phòng Kế toán", "Kế toán tổng hợp", "NV003", 16_000_000m),
+            ("Phòng Kế toán", "Kế toán tổng hợp", "TP006", 16_000_000m),
             ("Phòng Nhân sự", "Nhân viên nhân sự", "TP003", 13_000_000m),
             ("Phòng Hành chính", "Nhân viên hành chính", "TP004", 12_000_000m),
-            ("Phòng Marketing", "Nhân viên Marketing", "NV006", 15_000_000m),
+            ("Phòng Marketing", "Nhân viên Marketing", "TP007", 15_000_000m),
             ("Phòng Pháp chế", "Chuyên viên pháp chế", "TP005", 15_000_000m)
         };
         var tenNhanVienVanPhong = new[]
@@ -84,6 +88,11 @@ public static class BoDuLieuKhoiTao
 
         for (var i = 1; i <= 20; i++)
         {
+            if (i is 3 or 6)
+            {
+                continue;
+            }
+
             var cauHinh = phongBanNhanVien[(i - 1) % phongBanNhanVien.Length];
             var hoTen = tenNhanVienVanPhong[i - 1];
             tenDaDung.Add(hoTen);

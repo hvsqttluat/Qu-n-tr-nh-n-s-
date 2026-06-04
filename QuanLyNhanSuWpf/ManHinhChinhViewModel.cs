@@ -33,6 +33,11 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private const string TatCaPhongBan = "Tất cả phòng ban";
     private const string TatCaTrangThaiNhanVien = "Tất cả trạng thái";
     private const string TatCaTrangThaiChamCong = "Tất cả trạng thái";
+    private static readonly string[] TatCaMucDieuHuong =
+    [
+        "Tổng quan", "Nhân viên", "Thông báo", "Phòng ban", "Ứng viên", "Chấm công",
+        "Nghỉ phép", "Đánh giá", "Bảng lương", "Báo cáo", "Cài đặt tài khoản"
+    ];
     private readonly KhoDuLieuNhanSu khoDuLieu = new();
     private KhoDuLieuUngDung duLieu = new();
     private string mucDangChon = "Tổng quan";
@@ -54,7 +59,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private string phongBanNghiPhepDangChon = TatCaPhongBan;
     private string tuKhoaDanhGia = "";
     private string phongBanDanhGiaDangChon = TatCaPhongBan;
-    private int tabDanhGiaDangChon;
+    private int tabDanhGiaDangChon = 1;
     private string kyBaoCaoNhanSuDangChon = "Tháng này";
     private bool chiThongBaoChuaDoc;
     private bool dangMoBieuMauThongBao;
@@ -99,15 +104,15 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         PhienDangNhap = phienDangNhap ?? PhienDangNhap.MacDinh;
         TaiTrangThaiDocThongBao();
         mucDangChon = "Tổng quan";
-        CacMucDieuHuong = ["Tổng quan", "Nhân viên", "Phòng ban", "Ứng viên", "Chấm công", "Nghỉ phép", "Đánh giá", "Bảng lương", "Báo cáo", "Cài đặt tài khoản"];
-        CacTaiKhoanHeThong = TaoTaiKhoanHeThongMau(PhienDangNhap);
+        CacMucDieuHuong = [];
+        CacTaiKhoanHeThong = CoQuyenCaiDatTaiKhoan ? TaoTaiKhoanHeThongMau(PhienDangNhap) : [];
         ChonMucLenh = new LenhGiaoDien(ChonMucDieuHuong);
-        ThemMoiLenh = new LenhGiaoDien(_ => TaoMoiNhanVien(), _ => CoQuyenQuanLyHoSoNhanVien);
-        SuaLenh = new LenhGiaoDien(_ => DuaVaoBieuMau(), _ => CoTheThaoTacNhanVienDangChon());
+        ThemMoiLenh = new LenhGiaoDien(_ => { TaoMoiNhanVien(); MoCuaSoNhanVien(); }, _ => CoQuyenQuanLyHoSoNhanVien);
+        SuaLenh = new LenhGiaoDien(_ => { DuaVaoBieuMau(); MoCuaSoNhanVien(); }, _ => CoTheThaoTacNhanVienDangChon());
         LuuLenh = new LenhGiaoDien(async _ => await LuuNhanVien(), _ => CoQuyenQuanLyHoSoNhanVien);
         XoaLenh = new LenhGiaoDien(async _ => await XoaNhanVien(), _ => CoTheSuaNhanVienDangChon() && NhanVienDangChon?.DangLamViec == true);
         TaiLaiLenh = new LenhGiaoDien(async _ => await TaiDuLieu());
-        TaoThongBaoThuLenh = new LenhGiaoDien(_ => MoBieuMauThongBao(), _ => CoQuyenTaoThongBao);
+        TaoThongBaoThuLenh = new LenhGiaoDien(_ => MoCuaSoThongBao(), _ => CoQuyenTaoThongBao);
         GuiThongBaoLenh = new LenhGiaoDien(_ => GuiThongBaoMoi(), _ => CoQuyenTaoThongBao);
         HuyTaoThongBaoLenh = new LenhGiaoDien(_ => DongBieuMauThongBao());
         ChonTepThongBaoLenh = new LenhGiaoDien(_ => ChonTepThongBao(), _ => CoQuyenTaoThongBao);
@@ -115,46 +120,49 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         MoTepThongBaoLenh = new LenhGiaoDien(p => MoTepThongBao(p));
         MoThongBaoLenh = new LenhGiaoDien(p => MoThongBao(p));
         CapNhatDocThongBaoLenh = new LenhGiaoDien(p => CapNhatDocThongBao(p));
-        TaoPhongBanLenh = new LenhGiaoDien(_ => TaoMoiPhongBan(), _ => CoQuyenPhongBan);
-        SuaPhongBanLenh = new LenhGiaoDien(_ => DuaPhongBanVaoBieuMau(), _ => CoTheSuaPhongBanDangChon());
+        TaoPhongBanLenh = new LenhGiaoDien(_ => { TaoMoiPhongBan(); MoCuaSoPhongBan(); }, _ => CoQuyenPhongBan);
+        SuaPhongBanLenh = new LenhGiaoDien(_ => { DuaPhongBanVaoBieuMau(); MoCuaSoPhongBan(); }, _ => CoTheSuaPhongBanDangChon());
         LuuPhongBanLenh = new LenhGiaoDien(async _ => await LuuPhongBan(), _ => CoTheLuuPhongBan());
         XoaPhongBanLenh = new LenhGiaoDien(async _ => await XoaPhongBan(), _ => CoTheSuaPhongBanDangChon());
         GanTruongPhongLenh = new LenhGiaoDien(async _ => await GanTruongPhong(), _ => CoTheGanTruongPhongDangChon());
-        TaoMoiUngVienLenh = new LenhGiaoDien(_ => TaoMoiUngVien(), _ => CoQuyenTuyenDung);
-        SuaUngVienLenh = new LenhGiaoDien(_ => DuaUngVienVaoBieuMau(), _ => UngVienDangChon is not null && LocUngVien(UngVienDangChon));
+        TaoMoiUngVienLenh = new LenhGiaoDien(_ => { TaoMoiUngVien(); MoCuaSoUngVien(); }, _ => CoQuyenTuyenDung);
+        SuaUngVienLenh = new LenhGiaoDien(_ => { DuaUngVienVaoBieuMau(); MoCuaSoUngVien(); }, _ => CoQuyenTuyenDung && UngVienDangChon is not null && LocUngVien(UngVienDangChon));
         TaoUngVienLenh = new LenhGiaoDien(async _ => await LuuUngVien(), _ => CoQuyenTuyenDung);
         ChuyenUngVienThanhNhanVienLenh = new LenhGiaoDien(async _ => await ChuyenUngVienThanhNhanVien(), _ => CoTheChuyenUngVienThanhNhanVien());
-        ChuyenGiaiDoanUngVienLenh = new LenhGiaoDien(async _ => await ChuyenGiaiDoanUngVien(), _ => UngVienDangChon is not null && LocUngVien(UngVienDangChon));
-        XuatHopDongLamViecLenh = new LenhGiaoDien(_ => XuatHopDongLamViec(), _ => UngVienDangChon is not null && LocUngVien(UngVienDangChon));
+        ChuyenGiaiDoanUngVienLenh = new LenhGiaoDien(async _ => await ChuyenGiaiDoanUngVien(), _ => CoQuyenTuyenDung && UngVienDangChon is not null && LocUngVien(UngVienDangChon));
+        XuatHopDongLamViecLenh = new LenhGiaoDien(_ => XuatHopDongLamViec(), _ => CoQuyenTuyenDung && UngVienDangChon is not null && LocUngVien(UngVienDangChon));
         VaoCaLenh = new LenhGiaoDien(async _ => await VaoCa(), _ => CoTheVaoCaDangChon);
         RaCaLenh = new LenhGiaoDien(async _ => await RaCa(), _ => CoTheRaCaDangChon);
         DieuChinhCongLenh = new LenhGiaoDien(async _ => await DieuChinhCong(), _ => CoQuyenDieuChinhCong && ChamCongDangChon is not null && LocChamCong(ChamCongDangChon));
-        TaoNghiPhepLenh = new LenhGiaoDien(async _ => await TaoNghiPhep());
+        MoChamCongLenh = new LenhGiaoDien(_ => MoCuaSoChamCong(), _ => CoQuyenChamCong);
+        MoTaoNghiPhepLenh = new LenhGiaoDien(_ => MoCuaSoNghiPhep(), _ => CoQuyenNghiPhep);
+        TaoNghiPhepLenh = new LenhGiaoDien(async _ => await TaoNghiPhep(), _ => CoQuyenNghiPhep);
         DuyetNghiPhepLenh = new LenhGiaoDien(async _ => await CapNhatNghiPhep("Đã duyệt"), _ => CoTheXuLyNghiPhep(NghiPhepDangChon));
         TuChoiNghiPhepLenh = new LenhGiaoDien(async _ => await CapNhatNghiPhep("Từ chối"), _ => CoTheXuLyNghiPhep(NghiPhepDangChon));
         DuyetNghiPhepDongLenh = new LenhGiaoDien(async p => await CapNhatNghiPhepTuDong(p, "Đã duyệt"), CoTheXuLyNghiPhep);
         TuChoiNghiPhepDongLenh = new LenhGiaoDien(async p => await CapNhatNghiPhepTuDong(p, "Từ chối"), CoTheXuLyNghiPhep);
-        TaoMoiDanhGiaLenh = new LenhGiaoDien(_ => TaoMoiDanhGia(), _ => CoQuyenGhiNhanDanhGia);
-        SuaDanhGiaLenh = new LenhGiaoDien(_ => DuaDanhGiaVaoBieuMau(), _ => CoQuyenGhiNhanDanhGia && DanhGiaDangChon is not null && LocDanhGia(DanhGiaDangChon));
+        TaoMoiDanhGiaLenh = new LenhGiaoDien(_ => { TaoMoiDanhGia(); MoCuaSoDanhGia(); }, _ => CoQuyenGhiNhanDanhGia);
+        SuaDanhGiaLenh = new LenhGiaoDien(_ => { DuaDanhGiaVaoBieuMau(); MoCuaSoDanhGia(); }, _ => CoQuyenGhiNhanDanhGia && DanhGiaDangChon is not null && LocDanhGia(DanhGiaDangChon));
         TaoDanhGiaLenh = new LenhGiaoDien(async _ => await LuuDanhGia(), _ => CoQuyenGhiNhanDanhGia);
         XoaDanhGiaLenh = new LenhGiaoDien(async _ => await XoaDanhGia(), _ => CoQuyenGhiNhanDanhGia && DanhGiaDangChon is not null && LocDanhGia(DanhGiaDangChon));
         ChotDanhGiaLenh = new LenhGiaoDien(async _ => await ChotDanhGia(), _ => CoQuyenGhiNhanDanhGia && DanhGiaDangChon is not null && LocDanhGia(DanhGiaDangChon));
         TinhLuongLenh = new LenhGiaoDien(async _ => await TinhLuong(), _ => CoQuyenXuLyBangLuong && CoTheThaoTacNhanVienDangChon());
+        MoTinhLuongLenh = new LenhGiaoDien(_ => MoCuaSoLuong(), _ => CoQuyenXuLyBangLuong);
         XemPhieuLuongLenh = new LenhGiaoDien(_ => XemPhieuLuong(), _ => PhieuLuongDangChon is not null && LocPhieuLuong(PhieuLuongDangChon));
         XacNhanTraLuongLenh = new LenhGiaoDien(async _ => await XacNhanTraLuong(), _ => CoQuyenXuLyBangLuong && PhieuLuongDangChon is not null && LocPhieuLuong(PhieuLuongDangChon));
-        XuatBaoCaoNhanVienLenh = new LenhGiaoDien(_ => XuatBaoCaoNhanVien());
-        XuatBaoCaoChamCongLenh = new LenhGiaoDien(_ => XuatBaoCaoChamCong());
-        XuatBaoCaoNghiPhepLenh = new LenhGiaoDien(_ => XuatBaoCaoNghiPhep());
-        XuatBaoCaoLuongLenh = new LenhGiaoDien(_ => XuatBaoCaoLuong(), _ => CoQuyenXuLyBangLuong);
-        TaoTaiKhoanMauLenh = new LenhGiaoDien(async _ => await TaoTaiKhoanMau());
-        ThemTaiKhoanLenh = new LenhGiaoDien(_ => TaoMoiTaiKhoan(), _ => CoQuyenCaiDatTaiKhoan);
-        KhoaMoTaiKhoanLenh = new LenhGiaoDien(async _ => await KhoaMoTaiKhoan(), _ => TaiKhoanDangChon is not null);
-        SuaThongTinTaiKhoanLenh = new LenhGiaoDien(_ => SuaThongTinTaiKhoan(), _ => TaiKhoanDangChon is not null && CoQuyenCaiDatTaiKhoan);
+        XuatBaoCaoNhanVienLenh = new LenhGiaoDien(_ => XuatBaoCaoNhanVien(), _ => CoQuyenBaoCaoNhanSu);
+        XuatBaoCaoChamCongLenh = new LenhGiaoDien(_ => XuatBaoCaoChamCong(), _ => CoQuyenBaoCaoNhanSu);
+        XuatBaoCaoNghiPhepLenh = new LenhGiaoDien(_ => XuatBaoCaoNghiPhep(), _ => CoQuyenBaoCaoNhanSu);
+        XuatBaoCaoLuongLenh = new LenhGiaoDien(_ => XuatBaoCaoLuong(), _ => CoQuyenBaoCaoNhanSu && CoQuyenXuLyBangLuong);
+        TaoTaiKhoanMauLenh = new LenhGiaoDien(async _ => await TaoTaiKhoanMau(), _ => CoQuyenCaiDatTaiKhoan);
+        ThemTaiKhoanLenh = new LenhGiaoDien(_ => { TaoMoiTaiKhoan(); MoCuaSoTaiKhoan(); }, _ => CoQuyenCaiDatTaiKhoan);
+        KhoaMoTaiKhoanLenh = new LenhGiaoDien(async _ => await KhoaMoTaiKhoan(), _ => CoQuyenCaiDatTaiKhoan && TaiKhoanDangChon is not null);
+        SuaThongTinTaiKhoanLenh = new LenhGiaoDien(_ => { SuaThongTinTaiKhoan(); MoCuaSoTaiKhoan(); }, _ => TaiKhoanDangChon is not null && CoQuyenCaiDatTaiKhoan);
         LuuTaiKhoanLenh = new LenhGiaoDien(async _ => await LuuTaiKhoan(), _ => CoQuyenCaiDatTaiKhoan);
         HuySuaTaiKhoanLenh = new LenhGiaoDien(_ => TaoMoiTaiKhoan());
-        DatLaiMatKhauLenh = new LenhGiaoDien(async _ => await DatLaiMatKhauTheoBieuMau(), _ => TaiKhoanDangChon is not null);
-        SaoLuuDuLieuLenh = new LenhGiaoDien(_ => SaoLuuDuLieu());
-        PhucHoiDuLieuLenh = new LenhGiaoDien(_ => PhucHoiDuLieu());
+        DatLaiMatKhauLenh = new LenhGiaoDien(async _ => await DatLaiMatKhauTheoBieuMau(), _ => CoQuyenCaiDatTaiKhoan && TaiKhoanDangChon is not null);
+        SaoLuuDuLieuLenh = new LenhGiaoDien(_ => SaoLuuDuLieu(), _ => CoQuyenCaiDatTaiKhoan);
+        PhucHoiDuLieuLenh = new LenhGiaoDien(_ => PhucHoiDuLieu(), _ => CoQuyenCaiDatTaiKhoan);
 
         bieuMauNhanVien.PropertyChanged += BieuMauNhanVien_PropertyChanged;
         bieuMauPhongBan.PropertyChanged += BieuMauPhongBan_PropertyChanged;
@@ -166,6 +174,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             boDemThongBaoNhanh.Stop();
             DangHienThongBaoNhanh = false;
         };
+        CapNhatPhanQuyenHienThi();
     }
 
     public PhienDangNhap PhienDangNhap { get; }
@@ -208,6 +217,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public ICommand VaoCaLenh { get; }
     public ICommand RaCaLenh { get; }
     public ICommand DieuChinhCongLenh { get; }
+    public ICommand MoChamCongLenh { get; }
+    public ICommand MoTaoNghiPhepLenh { get; }
     public ICommand TaoNghiPhepLenh { get; }
     public ICommand DuyetNghiPhepLenh { get; }
     public ICommand TuChoiNghiPhepLenh { get; }
@@ -219,6 +230,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public ICommand XoaDanhGiaLenh { get; }
     public ICommand ChotDanhGiaLenh { get; }
     public ICommand TinhLuongLenh { get; }
+    public ICommand MoTinhLuongLenh { get; }
     public ICommand XemPhieuLuongLenh { get; }
     public ICommand XacNhanTraLuongLenh { get; }
     public ICommand XuatBaoCaoNhanVienLenh { get; }
@@ -241,6 +253,11 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         get => mucDangChon;
         set
         {
+            if (!string.IsNullOrWhiteSpace(value) && !CoQuyenTruyCap(value))
+            {
+                return;
+            }
+
             if (string.Equals(mucDangChon, value, StringComparison.Ordinal))
             {
                 return;
@@ -606,21 +623,23 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public string TenDangNhap => PhienDangNhap.TenDangNhap;
     public string MoTaQuyenNguoiDung => LayMoTaQuyen(VaiTroNguoiDung);
     public bool DangXemTongQuan => MucDangChon == "Tổng quan";
-    public bool CoQuyenTuyenDung => LaVaiTro("Admin", "Giám đốc", "Trưởng phòng");
-    public bool CoQuyenHoSoNhanVien => true;
-    public bool CoQuyenQuanLyHoSoNhanVien => LaVaiTro("Admin", "Giám đốc", "Trưởng phòng");
-    public bool CoQuyenPhongBan => LaVaiTro("Admin", "Giám đốc");
-    public bool CoQuyenChamCong => true;
-    public bool CoQuyenNghiPhep => true;
-    public bool CoQuyenDanhGia => true;
-    public bool CoQuyenDieuChinhCong => LaVaiTro("Admin", "Giám đốc", "Trưởng phòng");
-    public bool CoQuyenDuyetNghiPhep => LaVaiTro("Admin", "Giám đốc", "Trưởng phòng");
-    public bool CoQuyenGhiNhanDanhGia => LaVaiTro("Admin", "Giám đốc", "Trưởng phòng");
-    public bool CoQuyenBangLuong => true;
-    public bool CoQuyenXuLyBangLuong => LaVaiTro("Admin", "Giám đốc") || LaTruongPhongNhanSu;
-    public bool CoQuyenBaoCaoNhanSu => LaVaiTro("Admin", "Giám đốc", "Trưởng phòng");
+    public bool CoQuyenTongQuan => LaVaiTroQuanLyHoacChuyenMon;
+    public bool CoQuyenTuyenDung => LaVaiTroQuanLyNghiepVu;
+    public bool CoQuyenHoSoNhanVien => LaVaiTroTuPhucVu;
+    public bool CoQuyenThongBao => LaVaiTroTuPhucVu;
+    public bool CoQuyenQuanLyHoSoNhanVien => LaVaiTroQuanLyNghiepVu;
+    public bool CoQuyenPhongBan => LaVaiTro("Admin", "Giám đốc") || LaTruongPhongNhanSu;
+    public bool CoQuyenChamCong => LaVaiTroTuPhucVu;
+    public bool CoQuyenNghiPhep => LaVaiTroTuPhucVu;
+    public bool CoQuyenDanhGia => LaVaiTroTuPhucVu;
+    public bool CoQuyenDieuChinhCong => LaVaiTroQuanLyNghiepVu;
+    public bool CoQuyenDuyetNghiPhep => LaVaiTroQuanLyNghiepVu;
+    public bool CoQuyenGhiNhanDanhGia => LaVaiTroQuanLyNghiepVu;
+    public bool CoQuyenBangLuong => LaVaiTroTuPhucVu;
+    public bool CoQuyenXuLyBangLuong => LaVaiTro("Admin", "Giám đốc") || LaNhanSuNghiepVu;
+    public bool CoQuyenBaoCaoNhanSu => LaVaiTroQuanLyHoacChuyenMon;
     public bool CoQuyenCaiDatTaiKhoan => LaVaiTro("Admin");
-    public bool CoQuyenTaoThongBao => LaVaiTro("Admin", "Giám đốc", "Trưởng phòng");
+    public bool CoQuyenTaoThongBao => LaVaiTroQuanLyNghiepVu;
     public bool CoTepThongBaoMoi => !string.IsNullOrWhiteSpace(DuongDanTepThongBaoMoi);
     public string TenTepThongBaoHienThi => CoTepThongBaoMoi ? TenTepThongBaoMoi : "Chưa chọn tệp đính kèm";
     public Visibility HienThiBieuMauThongBao => DangMoBieuMauThongBao ? Visibility.Visible : Visibility.Collapsed;
@@ -635,15 +654,15 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public IReadOnlyList<string> CacGiaiDoanUngVien { get; } = ["Mới", "Sàng lọc hồ sơ", "Phỏng vấn", "Đề nghị nhận việc"];
     public IReadOnlyList<string> CacTrangThaiChamCong { get; } = [TatCaTrangThaiChamCong, "Đang trong ca", "Đủ công", "Thiếu giờ", "Tăng ca"];
     public IReadOnlyList<string> CacTrangThaiDanhGia { get; } = ["Nháp", "Đang đánh giá", "Hoàn tất"];
-    public IReadOnlyList<string> CacVaiTroTaiKhoan { get; } = ["Admin", "Giám đốc", "Trưởng phòng", "Nhân viên"];
+    public IReadOnlyList<string> CacVaiTroTaiKhoan { get; } = ["Admin", "Giám đốc", "Trưởng phòng", "Nhân sự", "Chuyên viên", "Nhân viên", "Công nhân"];
     public decimal TongLuongChoTra => DuLieu.PhieuLuong.Where(p => CoTheXemTheoTen(p.NhanVien) && !p.TrangThai.Contains("Đã trả", StringComparison.OrdinalIgnoreCase)).Sum(p => p.ThucLanh);
     public int SoPhieuLuongChoTra => DuLieu.PhieuLuong.Count(p => CoTheXemTheoTen(p.NhanVien) && !p.TrangThai.Contains("Đã trả", StringComparison.OrdinalIgnoreCase));
     public string NhanVienThaoTac => NhanVienDangChon is null ? "Chưa chọn nhân viên" : $"{NhanVienDangChon.HoTen} - {NhanVienDangChon.ViTri}";
     public decimal TongGioCongThangDangChon => NhanVienDangChon is null ? 0 : TinhTongGioCongThang(NhanVienDangChon);
     public decimal NgayCongQuyDoiDangChon => NhanVienDangChon is null ? 0 : TinhNgayCongQuyDoi(NhanVienDangChon);
     public decimal LuongCoBanDuKienDangChon => NhanVienDangChon is null ? 0 : LayLuongCoBan(NhanVienDangChon);
-    public bool CoTheVaoCaDangChon => NhanVienDangChon is not null && NhanVienDangChon.DangLamViec && CoTheThaoTacNhanVienDangChon() && !CoCaDangMo(NhanVienDangChon);
-    public bool CoTheRaCaDangChon => NhanVienDangChon is not null && NhanVienDangChon.DangLamViec && CoTheThaoTacNhanVienDangChon() && CoCaDangMo(NhanVienDangChon);
+    public bool CoTheVaoCaDangChon => CoQuyenChamCong && NhanVienDangChon is not null && NhanVienDangChon.DangLamViec && CoTheThaoTacNhanVienDangChon() && !CoCaDangMo(NhanVienDangChon);
+    public bool CoTheRaCaDangChon => CoQuyenChamCong && NhanVienDangChon is not null && NhanVienDangChon.DangLamViec && CoTheThaoTacNhanVienDangChon() && CoCaDangMo(NhanVienDangChon);
     public string TrangThaiCaDangChon => TaoMoTaTrangThaiCaDangChon();
     public string CaGanNhatDangChon => TaoMoTaCaGanNhatDangChon();
     public ObservableCollection<DiemLuongThang> DuLieuLuong12Thang { get => duLieuLuong12Thang; private set { duLieuLuong12Thang = value; BaoThayDoi(); } }
@@ -681,7 +700,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public string PhamViTraCuu => PhongBanTraCuuDangChon == TatCaPhongBan ? "Toàn cơ quan" : PhongBanTraCuuDangChon;
     public string PhamViDuLieuHienThi => LaToanQuyenDuLieu
         ? "Toàn hệ thống"
-        : LaVaiTro("Trưởng phòng")
+        : LaPhamViPhongBan
             ? $"Phòng ban phụ trách: {PhongBanNguoiDungHienTai}"
             : $"Cá nhân: {TenNguoiDung}";
     public int SoNhanSuTraCuu => DanhSachNhanSuTraCuu.Count;
@@ -799,6 +818,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             : BieuMauPhongBan.TenPhongBan.Trim();
         var ketQua = await khoDuLieu.TaiDuLieuAsync();
         DuLieu = ketQua.DuLieu;
+        CapNhatPhanQuyenHienThi();
         ChuanHoaPhieuLuongAm();
         NhapThongBaoPhienLamViec();
         ApDungTrangThaiDocThongBao();
@@ -920,7 +940,23 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             ?? danhSach.FirstOrDefault();
     }
 
-    private bool LaToanQuyenDuLieu => LaVaiTro("Admin", "Giám đốc");
+    private bool LaVaiTroTuPhucVu => LaVaiTro(
+        "Admin", "Giám đốc", "Trưởng phòng", "Nhân sự", "Nhân viên nhân sự",
+        "Chuyên viên nhân sự", "Chuyên viên", "Nhân viên", "Công nhân");
+
+    private bool LaVaiTroNhanSu => LaVaiTro("Nhân sự", "Nhân viên nhân sự", "Chuyên viên nhân sự");
+
+    private bool LaVaiTroChuyenVien => LaVaiTro("Chuyên viên");
+
+    private bool LaNhanSuNghiepVu => LaVaiTroNhanSu || LaTruongPhongNhanSu;
+
+    private bool LaVaiTroQuanLyNghiepVu => LaVaiTro("Admin", "Giám đốc", "Trưởng phòng") || LaVaiTroNhanSu;
+
+    private bool LaVaiTroQuanLyHoacChuyenMon => LaVaiTroQuanLyNghiepVu || LaVaiTroChuyenVien;
+
+    private bool LaPhamViPhongBan => LaVaiTro("Trưởng phòng") || LaVaiTroChuyenVien;
+
+    private bool LaToanQuyenDuLieu => LaVaiTro("Admin", "Giám đốc") || LaNhanSuNghiepVu;
 
     private bool LaTruongPhongNhanSu => LaVaiTro("Trưởng phòng")
         && PhongBanNguoiDungHienTai.Contains("Nhân sự", StringComparison.OrdinalIgnoreCase);
@@ -1053,7 +1089,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return true;
         }
 
-        return LaVaiTro("Trưởng phòng")
+        return LaPhamViPhongBan
             && string.Equals(nhanVien.PhongBan, PhongBanNguoiDungHienTai, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -1727,8 +1763,10 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     {
         return muc switch
         {
+            "Tổng quan" => CoQuyenTongQuan,
             "Ứng viên" => CoQuyenTuyenDung,
             "Nhân viên" => CoQuyenHoSoNhanVien,
+            "Thông báo" => CoQuyenThongBao,
             "Phòng ban" => CoQuyenPhongBan,
             "Chấm công" => CoQuyenChamCong,
             "Nghỉ phép" => CoQuyenNghiPhep,
@@ -1736,8 +1774,95 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             "Bảng lương" => CoQuyenBangLuong,
             "Báo cáo" => CoQuyenBaoCaoNhanSu,
             "Cài đặt tài khoản" => CoQuyenCaiDatTaiKhoan,
-            _ => true
+            _ => false
         };
+    }
+
+    private void CapNhatPhanQuyenHienThi()
+    {
+        var cacMucDuocPhep = TatCaMucDieuHuong.Where(CoQuyenTruyCap).ToList();
+        CacMucDieuHuong.Clear();
+        foreach (var muc in cacMucDuocPhep)
+        {
+            CacMucDieuHuong.Add(muc);
+        }
+
+        BaoThayDoi(nameof(CacMucDieuHuong));
+        BaoThayDoi(nameof(MoTaQuyenNguoiDung));
+        BaoThayDoi(nameof(PhamViDuLieuHienThi));
+        BaoThayDoi(nameof(CoQuyenTongQuan));
+        BaoThayDoi(nameof(CoQuyenTuyenDung));
+        BaoThayDoi(nameof(CoQuyenHoSoNhanVien));
+        BaoThayDoi(nameof(CoQuyenThongBao));
+        BaoThayDoi(nameof(CoQuyenQuanLyHoSoNhanVien));
+        BaoThayDoi(nameof(CoQuyenPhongBan));
+        BaoThayDoi(nameof(CoQuyenChamCong));
+        BaoThayDoi(nameof(CoQuyenNghiPhep));
+        BaoThayDoi(nameof(CoQuyenDanhGia));
+        BaoThayDoi(nameof(CoQuyenDieuChinhCong));
+        BaoThayDoi(nameof(CoQuyenDuyetNghiPhep));
+        BaoThayDoi(nameof(CoQuyenGhiNhanDanhGia));
+        BaoThayDoi(nameof(CoQuyenBangLuong));
+        BaoThayDoi(nameof(CoQuyenXuLyBangLuong));
+        BaoThayDoi(nameof(CoQuyenBaoCaoNhanSu));
+        BaoThayDoi(nameof(CoQuyenCaiDatTaiKhoan));
+        BaoThayDoi(nameof(CoQuyenTaoThongBao));
+
+        if (!cacMucDuocPhep.Contains(MucDangChon, StringComparer.OrdinalIgnoreCase))
+        {
+            MucDangChon = cacMucDuocPhep.FirstOrDefault() ?? "";
+        }
+
+        foreach (var lenh in new[]
+        {
+            ThemMoiLenh, SuaLenh, LuuLenh, XoaLenh, TaoThongBaoThuLenh, GuiThongBaoLenh,
+            TaoPhongBanLenh, SuaPhongBanLenh, LuuPhongBanLenh, XoaPhongBanLenh, GanTruongPhongLenh,
+            TaoMoiUngVienLenh, SuaUngVienLenh, TaoUngVienLenh, ChuyenUngVienThanhNhanVienLenh,
+            ChuyenGiaiDoanUngVienLenh, XuatHopDongLamViecLenh, VaoCaLenh, RaCaLenh, DieuChinhCongLenh,
+            MoChamCongLenh, MoTaoNghiPhepLenh, TaoNghiPhepLenh, DuyetNghiPhepLenh, TuChoiNghiPhepLenh,
+            TaoMoiDanhGiaLenh, SuaDanhGiaLenh, TaoDanhGiaLenh, XoaDanhGiaLenh, ChotDanhGiaLenh,
+            TinhLuongLenh, MoTinhLuongLenh, XemPhieuLuongLenh, XacNhanTraLuongLenh,
+            XuatBaoCaoNhanVienLenh, XuatBaoCaoChamCongLenh, XuatBaoCaoNghiPhepLenh, XuatBaoCaoLuongLenh,
+            TaoTaiKhoanMauLenh, ThemTaiKhoanLenh, KhoaMoTaiKhoanLenh, SuaThongTinTaiKhoanLenh,
+            LuuTaiKhoanLenh, DatLaiMatKhauLenh, SaoLuuDuLieuLenh, PhucHoiDuLieuLenh
+        })
+        {
+            (lenh as LenhGiaoDien)?.LamMoi();
+        }
+    }
+
+    private void MoCuaSoNhanVien() => MoCuaSoBieuMau(new CuaSoNhanVienWindow());
+    private void MoCuaSoPhongBan() => MoCuaSoBieuMau(new CuaSoPhongBanWindow());
+    private void MoCuaSoUngVien() => MoCuaSoBieuMau(new CuaSoUngVienWindow());
+    private void MoCuaSoNghiPhep() => MoCuaSoBieuMau(new CuaSoNghiPhepWindow());
+    private void MoCuaSoDanhGia() => MoCuaSoBieuMau(new CuaSoDanhGiaWindow());
+    private void MoCuaSoChamCong() => MoCuaSoBieuMau(new CuaSoChamCongWindow());
+    private void MoCuaSoLuong() => MoCuaSoBieuMau(new CuaSoLuongWindow());
+    private void MoCuaSoTaiKhoan() => MoCuaSoBieuMau(new CuaSoTaiKhoanWindow());
+    private void MoCuaSoThongBao()
+    {
+        if (!CoQuyenTaoThongBao)
+        {
+            MessageBox.Show("Tài khoản hiện tại chỉ được xem thông báo, không được tạo thông báo mới.", "Phân quyền thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(PhanHeThongBaoMoi))
+        {
+            PhanHeThongBaoMoi = MucDangChon == "Tổng quan" ? "Hệ thống" : MucDangChon;
+        }
+
+        MoCuaSoBieuMau(new CuaSoThongBaoWindow());
+    }
+
+    private void MoCuaSoBieuMau(Window cuaSo)
+    {
+        cuaSo.DataContext = this;
+        cuaSo.Owner = Application.Current?.Windows
+            .OfType<Window>()
+            .FirstOrDefault(window => window.IsActive)
+            ?? Application.Current?.MainWindow;
+        cuaSo.ShowDialog();
     }
 
     private void TaoMoiNhanVien(bool khoiTaoNoiBo = false)
@@ -1771,10 +1896,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             ViTri = viTri?.TenViTri ?? ""
         };
 
-        if (!khoiTaoNoiBo)
-        {
-            TabNhanVienDangChon = 1;
-        }
+        (LuuLenh as LenhGiaoDien)?.LamMoi();
     }
 
     private void TaoMoiPhongBan(bool khoiTaoNoiBo = false)
@@ -1818,7 +1940,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     {
         if (NhanVienDangChon is null) return;
         BieuMauNhanVien = NhanVienDangChon.TaoBanSao();
-        TabNhanVienDangChon = 1;
+        (LuuLenh as LenhGiaoDien)?.LamMoi();
     }
 
     private void TaoMoiDanhGia(bool khoiTaoNoiBo = false)
@@ -2389,6 +2511,15 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             truongPhongCu.PhongBan = phongBan.TenPhongBan;
             truongPhongCu.MaViTri = viTriNhanVien.MaViTri;
             truongPhongCu.ViTri = viTriNhanVien.TenViTri;
+        }
+
+        if (!truongPhongMoi.MaSo.StartsWith("TP", StringComparison.OrdinalIgnoreCase))
+        {
+            truongPhongMoi.MaSo = QuyTacNghiepVuNhanSu.TaoMaNhanVienTiepTheo(
+                DuLieu.NhanVien
+                    .Where(nhanVien => nhanVien.MaNhanVien != truongPhongMoi.MaNhanVien)
+                    .Select(nhanVien => nhanVien.MaSo),
+                "TP");
         }
 
         truongPhongMoi.MaPhongBan = phongBan.MaPhongBan;
@@ -3369,7 +3500,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
     private async Task TaiDanhSachTaiKhoan(string? tenDangNhapCanChon = null)
     {
-        if (!DangDungSql)
+        if (!CoQuyenCaiDatTaiKhoan || !DangDungSql)
         {
             return;
         }
@@ -3445,6 +3576,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             }
 
             DuLieu = banSao.TaoKhoDuLieu();
+            CapNhatPhanQuyenHienThi();
             ApDungTrangThaiDocThongBao();
             NguonDuLieu = $"Bản phục hồi cục bộ - {Path.GetFileName(hopThoai.FileName)}";
             CauHinhDanhSachNhanVienView();
@@ -3502,6 +3634,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             }
             else
             {
+                CapNhatPhanQuyenHienThi();
                 DanhSachNhanVienView.Refresh();
                 LamMoiBoLocBangLuong();
                 BaoCaoThongKe();
@@ -4326,7 +4459,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             return;
         }
 
-        MoMucTheoThongBao("Tổng quan");
+        MoMucTheoThongBao(CoQuyenTongQuan ? "Tổng quan" : "Thông báo");
         HienThongBaoNhanh("Đã mở tổng quan hệ thống.");
     }
 
@@ -4583,8 +4716,10 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         {
             "Admin" => "Toàn quyền: tài khoản, dữ liệu, tuyển dụng, hồ sơ, chấm công, nghỉ phép, lương và báo cáo nhân sự.",
             "Giám đốc" => "Điều hành nghiệp vụ nhân sự: phòng ban, tuyển dụng, chấm công, nghỉ phép, lương, đánh giá và báo cáo.",
-            "Trưởng phòng" => "Quản lý đội nhóm: hồ sơ nhân viên, tuyển dụng, chấm công, nghỉ phép, đánh giá và báo cáo; trưởng phòng nhân sự được xử lý bảng lương.",
-            "Nhân viên" => "Tự phục vụ: xem hồ sơ, chấm công, nghỉ phép, phiếu lương, thông báo và đánh giá liên quan.",
+            "Trưởng phòng" => "Quản lý nhân sự trong phòng phụ trách; trưởng phòng nhân sự được quản trị nghiệp vụ nhân sự toàn hệ thống.",
+            "Nhân sự" or "Nhân viên nhân sự" or "Chuyên viên nhân sự" => "Thực hiện nghiệp vụ tuyển dụng, hồ sơ, chấm công, nghỉ phép, đánh giá, bảng lương và báo cáo toàn hệ thống.",
+            "Chuyên viên" => "Theo dõi hồ sơ, chấm công, nghỉ phép, đánh giá, bảng lương và báo cáo trong phòng ban chuyên môn.",
+            "Nhân viên" or "Công nhân" => "Tự phục vụ: xem thông báo, hồ sơ, chấm công, nghỉ phép, đánh giá và phiếu lương của chính mình.",
             _ => "Chưa phân quyền."
         };
     }
@@ -4596,8 +4731,10 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             new TaiKhoanHeThong("admin", "Quản trị hệ thống", "Admin", LayMoTaQuyen("Admin"), "Đang hoạt động", DateTime.Now.AddMinutes(-5)),
             new TaiKhoanHeThong("gd001", "Nguyễn Minh Đức", "Giám đốc", LayMoTaQuyen("Giám đốc"), "Đang hoạt động", DateTime.Now.AddMinutes(-8)),
             new TaiKhoanHeThong("tp003", "Lê Thu Hà", "Trưởng phòng", LayMoTaQuyen("Trưởng phòng"), "Đang hoạt động", DateTime.Now.AddHours(-2)),
+            new TaiKhoanHeThong("nv004", "Đỗ Quốc Bảo", "Nhân sự", LayMoTaQuyen("Nhân sự"), "Đang hoạt động", DateTime.Now.AddHours(-4)),
+            new TaiKhoanHeThong("nv007", "Tạ Minh Quân", "Chuyên viên", LayMoTaQuyen("Chuyên viên"), "Đang hoạt động", DateTime.Now.AddHours(-6)),
             new TaiKhoanHeThong("nv001", "Vũ Hải An", "Nhân viên", LayMoTaQuyen("Nhân viên"), "Đang hoạt động", DateTime.Now.AddDays(-1)),
-            new TaiKhoanHeThong("cn001", "Vũ Tuấn Phương", "Nhân viên", LayMoTaQuyen("Nhân viên"), "Đang hoạt động", DateTime.Now.AddDays(-2))
+            new TaiKhoanHeThong("cn001", "Vũ Tuấn Phương", "Công nhân", LayMoTaQuyen("Công nhân"), "Đang hoạt động", DateTime.Now.AddDays(-2))
         ];
 
         var viTriPhien = danhSach

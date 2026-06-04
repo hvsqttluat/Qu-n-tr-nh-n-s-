@@ -4,6 +4,22 @@ namespace QuanLyNhanSuWpf.Tests;
 public sealed class PhongBanPhanQuyenTests
 {
     [TestMethod]
+    public void DuLieuKhoiTaoMoiTruongPhongDeuCoMaTpVaDungChucVu()
+    {
+        var nhanSu = BoDuLieuKhoiTao.TaoNhanSu();
+
+        foreach (var phongBan in BoDuLieuKhoiTao.PhongBan.Where(phongBan => phongBan.TenPhongBan.StartsWith("Phòng ")))
+        {
+            StringAssert.StartsWith(phongBan.MaSoTruongPhong, "TP");
+            var truongPhong = nhanSu.Single(nhanVien => nhanVien.MaSo == phongBan.MaSoTruongPhong);
+            Assert.AreEqual(phongBan.TenPhongBan, truongPhong.TenPhongBan);
+            StringAssert.Contains(truongPhong.TenViTri, "Trưởng phòng");
+        }
+
+        Assert.IsFalse(nhanSu.Any(nhanVien => nhanVien.MaSo is "NV003" or "NV006"));
+    }
+
+    [TestMethod]
     public void GiamDocDuocSuaTenVaGanTruongPhong()
     {
         var viewModel = new ManHinhChinhViewModel(new PhienDangNhap("gd001", "Nguyễn Minh Đức", "Giám đốc"));
@@ -80,6 +96,7 @@ public sealed class PhongBanPhanQuyenTests
         var truongPhongCu = new NhanVien
         {
             MaNhanVien = 20,
+            MaSo = "TP020",
             HoTen = "Vũ Anh Tuấn",
             MaPhongBan = 10,
             PhongBan = "Phòng Pháp chế",
@@ -89,6 +106,7 @@ public sealed class PhongBanPhanQuyenTests
         var truongPhongMoi = new NhanVien
         {
             MaNhanVien = 21,
+            MaSo = "NV021",
             HoTen = "Trần Văn Luật",
             MaPhongBan = 2,
             PhongBan = "Phòng Nhân sự",
@@ -110,6 +128,7 @@ public sealed class PhongBanPhanQuyenTests
         method.Invoke(viewModel, [phongBan, truongPhongMoi]);
 
         Assert.AreEqual("Trưởng phòng Pháp chế", truongPhongMoi.ViTri);
+        Assert.AreEqual("TP021", truongPhongMoi.MaSo);
         Assert.AreEqual("Phòng Pháp chế", truongPhongMoi.PhongBan);
         Assert.AreEqual("Chuyên viên pháp chế", truongPhongCu.ViTri);
         Assert.AreEqual("Phòng Pháp chế", truongPhongCu.PhongBan);
@@ -193,6 +212,7 @@ public sealed class PhongBanPhanQuyenTests
         var phongBanSauLuu = viewModel.DuLieu.PhongBan.Single(x => x.MaPhongBan == phongBan.MaPhongBan);
         Assert.AreEqual(truongPhongMoi.HoTen, phongBanSauLuu.TruongPhong);
         Assert.AreEqual("Trưởng phòng Pháp chế", truongPhongMoi.ViTri);
+        Assert.AreEqual("TP021", truongPhongMoi.MaSo);
         Assert.AreEqual("Phòng Pháp chế", truongPhongMoi.PhongBan);
         Assert.AreEqual("Chuyên viên pháp chế", truongPhongCu.ViTri);
     }

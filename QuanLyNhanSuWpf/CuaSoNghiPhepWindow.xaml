@@ -1,0 +1,51 @@
+<Window x:Class="QuanLyNhanSuWpf.CuaSoNghiPhepWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Đơn nghỉ phép" Height="620" Width="660"
+        MinHeight="560" MinWidth="600"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        ShowInTaskbar="False">
+    <Border Margin="18" Style="{StaticResource TheThongKe}">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                <TextBlock Text="Tạo đơn nghỉ phép" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource MauChuChinh}"/>
+                <TextBlock Text="Chọn nhân viên, loại nghỉ và thời gian nghỉ trước khi gửi đơn." Style="{StaticResource MoTaNho}" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button Content="Gửi đơn nghỉ" Command="{Binding TaoNghiPhepLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
+                <Button Content="Đóng" IsCancel="True" Style="{StaticResource NutPhu}"/>
+            </StackPanel>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Nhân viên" Style="{StaticResource NhanTruong}"/>
+                    <ComboBox ItemsSource="{Binding NhanVienDangLamViecTrongPhamVi}" DisplayMemberPath="HoTen" SelectedValuePath="MaNhanVien"
+                              SelectedValue="{Binding BieuMauNghiPhep.MaNhanVien}" Padding="10" Margin="0,0,0,12"/>
+                    <TextBlock Text="Loại nghỉ" Style="{StaticResource NhanTruong}"/>
+                    <TextBox Text="{Binding BieuMauNghiPhep.LoaiNghi, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}" Margin="0,0,0,12"/>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Từ ngày" Style="{StaticResource NhanTruong}"/>
+                            <DatePicker SelectedDate="{Binding BieuMauNghiPhep.TuNgay}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Đến ngày" Style="{StaticResource NhanTruong}"/>
+                            <DatePicker SelectedDate="{Binding BieuMauNghiPhep.DenNgay}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Lý do" Style="{StaticResource NhanTruong}"/>
+                    <TextBox Text="{Binding BieuMauNghiPhep.LyDo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}"
+                             MinHeight="96" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</Window>

@@ -496,7 +496,15 @@ public class KhoDuLieuNhanSu
             ("@MaNhanVien", maNhanVien),
             ("@MaPhongBan", maPhongBan));
 
+        await ChuanHoaMaSoTruongPhongAsync();
         await DongBoTaiKhoanTheoChucVuNhanSuAsync();
+    }
+
+    private async Task ChuanHoaMaSoTruongPhongAsync()
+    {
+        await using var ketNoi = new SqlConnection(chuoiKetNoi);
+        await ketNoi.OpenAsync();
+        await DamBaoMaSoTruongPhongHopLeSqlAsync(ketNoi);
     }
 
     public async Task ChuyenGiaiDoanUngVienAsync(UngVien ungVien, string giaiDoanMoi)
@@ -835,7 +843,9 @@ public class KhoDuLieuNhanSu
                     WHEN N'Admin' THEN 1
                     WHEN N'Giám đốc' THEN 2
                     WHEN N'Trưởng phòng' THEN 3
-                    ELSE 4
+                    WHEN N'Nhân sự' THEN 4
+                    WHEN N'Chuyên viên' THEN 5
+                    ELSE 6
                 END,
                 Username
             """, ketNoi);
@@ -1097,9 +1107,12 @@ public class KhoDuLieuNhanSu
     {
         await DamBaoCauTrucSqlAsync(ketNoi);
         await SoDoQuanTriSql.DamBaoAsync(ketNoi);
+        await DamBaoMaSoTruongPhongHopLeSqlAsync(ketNoi);
         await DamBaoDuLieuMacDinhSqlAsync(ketNoi);
         await DamBaoPhanCongTruongPhongHopLeSqlAsync(ketNoi);
+        await DamBaoMaSoTruongPhongHopLeSqlAsync(ketNoi);
         await DamBaoHoSoNhanVienKhongTrungLapSqlAsync(ketNoi);
+        await DamBaoDuLieuNghiepVuKhongTrungLapSqlAsync(ketNoi);
         await TaiKhoanNhanSuSql.DamBaoTheoNhanVienAsync(ketNoi);
     }
 
@@ -1529,9 +1542,9 @@ public class KhoDuLieuNhanSu
                 (N'Phòng Kinh doanh', 'TP001', N'Trần Quốc Huy'),
                 (N'Phòng Sản xuất', 'TP002', N'Phạm Văn Long'),
                 (N'Phòng Nhân sự', 'TP003', N'Lê Thu Hà'),
-                (N'Phòng Kế toán', 'NV003', N'Bùi Thu Trang'),
+                (N'Phòng Kế toán', 'TP006', N'Bùi Thu Trang'),
                 (N'Phòng CNTT', NULL, N'Phạm Gia Dũng'),
-                (N'Phòng Marketing', 'NV006', N'Mai Ngọc Linh'),
+                (N'Phòng Marketing', 'TP007', N'Mai Ngọc Linh'),
                 (N'Phòng Hành chính', 'TP004', N'Đỗ Thị Mai'),
                 (N'Phòng Vận hành', NULL, N'Bùi Văn Hậu'),
                 (N'Phòng Chăm sóc khách hàng', NULL, N'Vũ Minh Huy'),
@@ -1667,6 +1680,135 @@ public class KhoDuLieuNhanSu
               AND d.ManagerID IS NOT NULL
               AND e.EmployeeID <> d.ManagerID
               AND p.Name LIKE N'%Trưởng phòng%';
+            """);
+    }
+
+    private static async Task DamBaoMaSoTruongPhongHopLeSqlAsync(SqlConnection ketNoi)
+    {
+        await ThucThiTrenKetNoiAsync(ketNoi, """
+            DECLARE @SoTiepTheo INT = ISNULL((
+                SELECT MAX(TRY_CONVERT(INT, SUBSTRING(EmployeeCode, 3, 18)))
+                FROM HR_Employees
+                WHERE EmployeeCode LIKE 'TP%'
+                  AND TRY_CONVERT(INT, SUBSTRING(EmployeeCode, 3, 18)) IS NOT NULL
+            ), 0);
+
+            DECLARE @MaNhanVien INT;
+            DECLARE @MaCu VARCHAR(20);
+            DECLARE @HoTen NVARCHAR(150);
+            DECLARE @MaUuTien VARCHAR(20);
+            DECLARE @MaMoi VARCHAR(20);
+
+            DECLARE con_tro_truong_phong CURSOR LOCAL FAST_FORWARD FOR
+                SELECT
+                    e.EmployeeID,
+                    e.EmployeeCode,
+                    e.FullName,
+                    CASE d.Name
+                        WHEN N'Phòng Kế toán' THEN 'TP006'
+                        WHEN N'Phòng Marketing' THEN 'TP007'
+                        ELSE NULL
+                    END
+                FROM HR_Departments d
+                JOIN HR_Employees e ON e.EmployeeID = d.ManagerID
+                WHERE d.Name LIKE N'Phòng %'
+                  AND e.IsActive = 1
+                  AND e.EmployeeCode NOT LIKE 'TP%'
+                ORDER BY
+                    CASE d.Name
+                        WHEN N'Phòng Kế toán' THEN 0
+                        WHEN N'Phòng Marketing' THEN 1
+                        ELSE 2
+                    END,
+                    d.DepartmentID,
+                    e.EmployeeID;
+
+            OPEN con_tro_truong_phong;
+            FETCH NEXT FROM con_tro_truong_phong INTO @MaNhanVien, @MaCu, @HoTen, @MaUuTien;
+
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                SET @MaMoi = NULL;
+
+                IF @MaUuTien IS NOT NULL
+                   AND NOT EXISTS (
+                       SELECT 1
+                       FROM HR_Employees
+                       WHERE EmployeeCode = @MaUuTien
+                         AND EmployeeID <> @MaNhanVien
+                   )
+                BEGIN
+                    SET @MaMoi = @MaUuTien;
+                END;
+
+                WHILE @MaMoi IS NULL
+                BEGIN
+                    SET @SoTiepTheo += 1;
+                    SET @MaMoi = 'TP' + CASE
+                        WHEN @SoTiepTheo < 1000 THEN RIGHT('000' + CONVERT(VARCHAR(18), @SoTiepTheo), 3)
+                        ELSE CONVERT(VARCHAR(18), @SoTiepTheo)
+                    END;
+
+                    IF EXISTS (
+                        SELECT 1
+                        FROM HR_Employees
+                        WHERE EmployeeCode = @MaMoi
+                          AND EmployeeID <> @MaNhanVien
+                    )
+                    BEGIN
+                        SET @MaMoi = NULL;
+                    END;
+                END;
+
+                IF OBJECT_ID(N'dbo.HR_Users', N'U') IS NOT NULL
+                BEGIN
+                    DECLARE @TenDangNhapCu NVARCHAR(80) = LOWER(@MaCu);
+                    DECLARE @TenDangNhapMoi NVARCHAR(80) = LOWER(@MaMoi);
+
+                    IF EXISTS (SELECT 1 FROM dbo.HR_Users WHERE Username = @TenDangNhapCu)
+                    BEGIN
+                        IF EXISTS (SELECT 1 FROM dbo.HR_Users WHERE Username = @TenDangNhapMoi)
+                        BEGIN
+                            UPDATE taiKhoanMoi
+                            SET FullName = @HoTen,
+                                RoleName = N'Trưởng phòng',
+                                PasswordHash = taiKhoanCu.PasswordHash,
+                                PasswordSalt = taiKhoanCu.PasswordSalt,
+                                PasswordIterations = taiKhoanCu.PasswordIterations,
+                                IsActive = taiKhoanCu.IsActive,
+                                RequirePasswordChange = taiKhoanCu.RequirePasswordChange,
+                                FailedLoginCount = taiKhoanCu.FailedLoginCount,
+                                LockoutUntilAt = taiKhoanCu.LockoutUntilAt,
+                                LastLoginAt = taiKhoanCu.LastLoginAt
+                            FROM dbo.HR_Users taiKhoanMoi
+                            CROSS JOIN dbo.HR_Users taiKhoanCu
+                            WHERE taiKhoanMoi.Username = @TenDangNhapMoi
+                              AND taiKhoanCu.Username = @TenDangNhapCu;
+
+                            UPDATE dbo.HR_Users
+                            SET IsActive = 0
+                            WHERE Username = @TenDangNhapCu;
+                        END
+                        ELSE
+                        BEGIN
+                            UPDATE dbo.HR_Users
+                            SET Username = @TenDangNhapMoi,
+                                FullName = @HoTen,
+                                RoleName = N'Trưởng phòng'
+                            WHERE Username = @TenDangNhapCu;
+                        END;
+                    END;
+                END;
+
+                UPDATE HR_Employees
+                SET EmployeeCode = @MaMoi
+                WHERE EmployeeID = @MaNhanVien;
+
+                FETCH NEXT FROM con_tro_truong_phong INTO @MaNhanVien, @MaCu, @HoTen, @MaUuTien;
+            END;
+
+            CLOSE con_tro_truong_phong;
+            DEALLOCATE con_tro_truong_phong;
             """);
     }
 
@@ -1861,6 +2003,77 @@ public class KhoDuLieuNhanSu
                     ("@MaPhongBan", phongBanIds[phongBan.TenPhongBan]));
             }
         }
+    }
+
+    private static async Task DamBaoDuLieuNghiepVuKhongTrungLapSqlAsync(SqlConnection ketNoi)
+    {
+        await ThucThiTrenKetNoiAsync(ketNoi, """
+            ;WITH XepHangChamCong AS
+            (
+                SELECT AttendanceID,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY EmployeeID, CAST(CheckInTime AS DATE)
+                           ORDER BY CASE WHEN CheckOutTime IS NULL THEN 1 ELSE 0 END,
+                                    AttendanceID DESC
+                       ) AS ThuTu
+                FROM HR_Attendances
+            )
+            DELETE FROM XepHangChamCong
+            WHERE ThuTu > 1;
+
+            ;WITH XepHangNghiPhep AS
+            (
+                SELECT LeaveID,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY EmployeeID, LeaveType, StartDate, EndDate
+                           ORDER BY LeaveID DESC
+                       ) AS ThuTu
+                FROM HR_LeaveRequests
+            )
+            DELETE FROM XepHangNghiPhep
+            WHERE ThuTu > 1;
+
+            ;WITH XepHangDanhGia AS
+            (
+                SELECT AppraisalID,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY EmployeeID, ReviewPeriod
+                           ORDER BY AppraisalID DESC
+                       ) AS ThuTu
+                FROM HR_Appraisals
+            )
+            DELETE FROM XepHangDanhGia
+            WHERE ThuTu > 1;
+
+            ;WITH XepHangPhieuLuong AS
+            (
+                SELECT PayslipID,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY EmployeeID, PayPeriod
+                           ORDER BY PayslipID DESC
+                       ) AS ThuTu
+                FROM HR_Payslips
+            )
+            DELETE FROM XepHangPhieuLuong
+            WHERE ThuTu > 1;
+
+            ;WITH XepHangHopDong AS
+            (
+                SELECT ContractID,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY EmployeeID,
+                                        ContractType,
+                                        StartDate,
+                                        ISNULL(EndDate, CONVERT(date, '99991231')),
+                                        BasicSalary,
+                                        Status
+                           ORDER BY ContractID DESC
+                       ) AS ThuTu
+                FROM HR_Contracts
+            )
+            DELETE FROM XepHangHopDong
+            WHERE ThuTu > 1;
+            """);
     }
 
     private static async Task DamBaoDuLieuNghiepVuMauSqlAsync(SqlConnection ketNoi)
@@ -2431,8 +2644,10 @@ public class KhoDuLieuNhanSu
     {
         "Admin" => "Toàn quyền: tài khoản, dữ liệu, tuyển dụng, hồ sơ, chấm công, nghỉ phép, lương và báo cáo nhân sự.",
         "Giám đốc" => "Điều hành nghiệp vụ nhân sự: phòng ban, tuyển dụng, chấm công, nghỉ phép, lương, đánh giá và báo cáo.",
-        "Trưởng phòng" => "Quản lý đội nhóm: hồ sơ nhân viên, tuyển dụng, chấm công, nghỉ phép, đánh giá và báo cáo.",
-        "Nhân viên" => "Tự phục vụ: chấm công, nghỉ phép, xem thông báo và đánh giá liên quan.",
+        "Trưởng phòng" => "Quản lý nhân sự trong phòng phụ trách; trưởng phòng nhân sự được quản trị nghiệp vụ nhân sự toàn hệ thống.",
+        "Nhân sự" or "Nhân viên nhân sự" or "Chuyên viên nhân sự" => "Thực hiện nghiệp vụ tuyển dụng, hồ sơ, chấm công, nghỉ phép, đánh giá, bảng lương và báo cáo toàn hệ thống.",
+        "Chuyên viên" => "Theo dõi hồ sơ, chấm công, nghỉ phép, đánh giá, bảng lương và báo cáo trong phòng ban chuyên môn.",
+        "Nhân viên" or "Công nhân" => "Tự phục vụ: xem thông báo, hồ sơ, chấm công, nghỉ phép, đánh giá và phiếu lương của chính mình.",
         _ => "Chưa phân quyền."
     };
 

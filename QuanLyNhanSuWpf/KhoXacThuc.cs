@@ -234,8 +234,12 @@ public class KhoXacThuc
         new("tp003", "Lê Thu Hà", "Trưởng phòng"),
         new("tp004", "Đỗ Thị Mai", "Trưởng phòng"),
         new("tp005", "Vũ Anh Tuấn", "Trưởng phòng"),
+        new("tp006", "Bùi Thu Trang", "Trưởng phòng"),
+        new("tp007", "Mai Ngọc Linh", "Trưởng phòng"),
+        new("nv004", "Đỗ Quốc Bảo", "Nhân sự"),
+        new("nv007", "Tạ Minh Quân", "Chuyên viên"),
         new("nv001", "Vũ Hải An", "Nhân viên"),
-        new("cn001", "Vũ Tuấn Phương", "Nhân viên")
+        new("cn001", "Vũ Tuấn Phương", "Công nhân")
     ];
 
     private record TaiKhoanXacThuc(

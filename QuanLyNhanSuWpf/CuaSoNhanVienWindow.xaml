@@ -1,0 +1,79 @@
+<Window x:Class="QuanLyNhanSuWpf.CuaSoNhanVienWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Hồ sơ nhân viên" Height="760" Width="720"
+        MinHeight="680" MinWidth="640"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        ShowInTaskbar="False">
+    <Border Margin="18" Style="{StaticResource TheThongKe}">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                <TextBlock Text="Hồ sơ nhân viên" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource MauChuChinh}"/>
+                <TextBlock Text="Nhập thông tin định danh, phòng ban, chức vụ và liên hệ của nhân viên." Style="{StaticResource MoTaNho}" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button Content="Lưu hồ sơ" Command="{Binding LuuLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
+                <Button Content="Đóng" IsCancel="True" Style="{StaticResource NutPhu}"/>
+            </StackPanel>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="ĐỊNH DANH" Style="{StaticResource NhanTruong}"/>
+                    <TextBlock Text="Mã nhân viên"/>
+                    <TextBox Text="{Binding BieuMauNhanVien.MaSo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}" Margin="0,5,0,10"/>
+                    <TextBlock Text="Họ tên"/>
+                    <TextBox Text="{Binding BieuMauNhanVien.HoTen, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}" Margin="0,5,0,10"/>
+                    <TextBlock Text="Số căn cước"/>
+                    <TextBox Text="{Binding BieuMauNhanVien.SoCanCuoc, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}" Margin="0,5,0,12"/>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Ngày sinh"/>
+                            <DatePicker SelectedDate="{Binding BieuMauNhanVien.NgaySinh}" Margin="0,5,0,0"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Ngày tham gia BHXH"/>
+                            <DatePicker SelectedDate="{Binding BieuMauNhanVien.NgayThamGiaBaoHiemXaHoi}" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="CÔNG VIỆC" Style="{StaticResource NhanTruong}" Margin="0,8,0,6"/>
+                    <TextBlock Text="Phòng ban"/>
+                    <ComboBox ItemsSource="{Binding PhongBanTrongPhamVi}" DisplayMemberPath="TenPhongBan" SelectedValuePath="MaPhongBan"
+                              SelectedValue="{Binding BieuMauNhanVien.MaPhongBan, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="10" Margin="0,5,0,10"/>
+                    <TextBlock Text="Chức vụ"/>
+                    <ComboBox ItemsSource="{Binding ViTriTheoPhongBanBieuMauNhanVien}" DisplayMemberPath="TenViTri" SelectedValuePath="MaViTri"
+                              SelectedValue="{Binding BieuMauNhanVien.MaViTri, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="10" Margin="0,5,0,10"/>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Ngày vào làm"/>
+                            <DatePicker SelectedDate="{Binding BieuMauNhanVien.NgayVaoLam}" Margin="0,5,0,0"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Trạng thái làm việc"/>
+                            <ComboBox ItemsSource="{Binding CacTrangThaiLamViec}" SelectedItem="{Binding BieuMauNhanVien.TrangThaiLamViec, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="10" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="LIÊN HỆ" Style="{StaticResource NhanTruong}" Margin="0,8,0,6"/>
+                    <TextBlock Text="Liên hệ khẩn cấp"/>
+                    <TextBox Text="{Binding BieuMauNhanVien.LienHeKhanCap, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}" Margin="0,5,0,10"/>
+                    <TextBlock Text="Tài khoản ngân hàng"/>
+                    <TextBox Text="{Binding BieuMauNhanVien.TaiKhoanNganHang, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}" Margin="0,5,0,0"/>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</Window>

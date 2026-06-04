@@ -1,0 +1,68 @@
+<Window x:Class="QuanLyNhanSuWpf.CuaSoThongBaoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Tạo thông báo" Height="660" Width="720"
+        MinHeight="580" MinWidth="640"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        ShowInTaskbar="False">
+    <Border Margin="18" Style="{StaticResource TheThongKe}">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                <TextBlock Text="Tạo thông báo" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource MauChuChinh}"/>
+                <TextBlock Text="Soạn thông báo nội bộ, chọn phân hệ liên quan và đính kèm tệp nếu cần." Style="{StaticResource MoTaNho}" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button Content="Gửi thông báo" Command="{Binding GuiThongBaoLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
+                <Button Content="Hủy" Command="{Binding HuyTaoThongBaoLenh}" IsCancel="True" Style="{StaticResource NutPhu}"/>
+            </StackPanel>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="190"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="170"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Tiêu đề" Style="{StaticResource NhanTruong}"/>
+                            <TextBox Text="{Binding TieuDeThongBaoMoi, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Phân hệ" Style="{StaticResource NhanTruong}"/>
+                            <ComboBox ItemsSource="{Binding CacPhanHeThongBao}" SelectedItem="{Binding PhanHeThongBaoMoi, Mode=TwoWay}" Padding="10"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="Mức độ" Style="{StaticResource NhanTruong}"/>
+                            <ComboBox ItemsSource="{Binding CacMucDoThongBao}" SelectedItem="{Binding MucDoThongBaoMoi, Mode=TwoWay}" Padding="10"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Nội dung" Style="{StaticResource NhanTruong}"/>
+                    <TextBox Text="{Binding NoiDungThongBaoMoi, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}"
+                             MinHeight="150" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,14"/>
+
+                    <Border Background="#F8FAFC" BorderBrush="{StaticResource MauVien}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Tệp đính kèm" Style="{StaticResource NhanTruong}"/>
+                                <TextBlock Text="{Binding TenTepThongBaoHienThi}" Style="{StaticResource MoTaNho}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                <Button Content="Chọn tệp" Command="{Binding ChonTepThongBaoLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
+                                <Button Content="Bỏ tệp" Command="{Binding XoaTepThongBaoLenh}" Style="{StaticResource NutPhu}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</Window>

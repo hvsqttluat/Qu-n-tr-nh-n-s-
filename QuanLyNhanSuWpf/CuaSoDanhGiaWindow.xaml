@@ -1,0 +1,55 @@
+<Window x:Class="QuanLyNhanSuWpf.CuaSoDanhGiaWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Đánh giá năng lực" Height="720" Width="720"
+        MinHeight="640" MinWidth="640"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        ShowInTaskbar="False">
+    <Border Margin="18" Style="{StaticResource TheThongKe}">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                <TextBlock Text="Đánh giá năng lực" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource MauChuChinh}"/>
+                <TextBlock Text="Nhập kỳ đánh giá, điểm số, nhận xét và trạng thái xử lý." Style="{StaticResource MoTaNho}" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button Content="Lưu đánh giá" Command="{Binding TaoDanhGiaLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
+                <Button Content="Chốt kết quả" Command="{Binding ChotDanhGiaLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
+                <Button Content="Đóng" IsCancel="True" Style="{StaticResource NutPhu}"/>
+            </StackPanel>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Nhân viên" Style="{StaticResource NhanTruong}"/>
+                    <ComboBox ItemsSource="{Binding NhanVienDangLamViecTrongPhamVi}" DisplayMemberPath="HoTen" SelectedValuePath="MaNhanVien"
+                              SelectedValue="{Binding BieuMauDanhGia.MaNhanVien}" Padding="10" Margin="0,0,0,12"/>
+                    <TextBlock Text="Người đánh giá" Style="{StaticResource NhanTruong}"/>
+                    <ComboBox ItemsSource="{Binding NhanVienDangLamViecTrongPhamVi}" DisplayMemberPath="HoTen" SelectedValuePath="MaNhanVien"
+                              SelectedValue="{Binding BieuMauDanhGia.MaNguoiDanhGia}" Padding="10" Margin="0,0,0,12"/>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="130"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Kỳ đánh giá" Style="{StaticResource NhanTruong}"/>
+                            <TextBox Text="{Binding BieuMauDanhGia.KyDanhGia, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Điểm" Style="{StaticResource NhanTruong}"/>
+                            <TextBox Text="{Binding BieuMauDanhGia.Diem, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Trạng thái" Style="{StaticResource NhanTruong}"/>
+                    <ComboBox ItemsSource="{Binding CacTrangThaiDanhGia}" SelectedItem="{Binding BieuMauDanhGia.TrangThai}" Padding="10" Margin="0,0,0,12"/>
+                    <TextBlock Text="Nhận xét" Style="{StaticResource NhanTruong}"/>
+                    <TextBox Text="{Binding BieuMauDanhGia.NhanXet, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}"
+                             MinHeight="130" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</Window>

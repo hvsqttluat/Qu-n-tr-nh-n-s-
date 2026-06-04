@@ -1,0 +1,45 @@
+<Window x:Class="QuanLyNhanSuWpf.CuaSoLuongWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Bảng lương" Height="600" Width="700"
+        MinHeight="540" MinWidth="640"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        ShowInTaskbar="False">
+    <Border Margin="18" Style="{StaticResource TheThongKe}">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                <TextBlock Text="Tính lương nhân viên" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource MauChuChinh}"/>
+                <TextBlock Text="Chọn nhân viên, kiểm tra công tháng và tạo hoặc cập nhật phiếu lương." Style="{StaticResource MoTaNho}" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button Content="Tính lương" Command="{Binding TinhLuongLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
+                <Button Content="Xem phiếu đang chọn" Command="{Binding XemPhieuLuongLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
+                <Button Content="Xác nhận đã chi trả" Command="{Binding XacNhanTraLuongLenh}" Style="{StaticResource NutPhu}" Margin="0,0,8,0"/>
+                <Button Content="Đóng" IsCancel="True" Style="{StaticResource NutPhu}"/>
+            </StackPanel>
+
+            <StackPanel>
+                <TextBlock Text="Nhân viên tính lương" Style="{StaticResource NhanTruong}"/>
+                <ComboBox ItemsSource="{Binding NhanVienTrongPhamVi}" DisplayMemberPath="HoTen" SelectedItem="{Binding NhanVienDangChon, Mode=TwoWay}" Padding="10" Margin="0,0,0,16"/>
+
+                <Border Background="#F8FAFC" BorderBrush="{StaticResource MauVien}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="{Binding NhanVienThaoTac}" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource MauChuChinh}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding LuongCoBanDuKienDangChon, StringFormat=Lương cơ bản: {0:N0} đ}" Foreground="{StaticResource MauXanhChuDao}" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                        <TextBlock Text="{Binding NgayCongQuyDoiDangChon, StringFormat=Ngày công tính lương: {0:N2}}" Foreground="{StaticResource MauThanhCong}" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="#FFFFFF" BorderBrush="{StaticResource MauVien}" BorderThickness="1" CornerRadius="8" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="Phiếu lương đang chọn" Style="{StaticResource NhanTruong}"/>
+                        <TextBlock Text="{Binding PhieuLuongDangChon.NhanVien, TargetNullValue=Chưa chọn phiếu lương}" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource MauChuChinh}"/>
+                        <TextBlock Text="{Binding PhieuLuongDangChon.KyLuong, StringFormat=Kỳ lương: {0}}" Style="{StaticResource MoTaNho}" Margin="0,6,0,0"/>
+                        <TextBlock Text="{Binding PhieuLuongDangChon.ThucLanh, StringFormat=Thực lãnh: {0:N0} đ}" Foreground="{StaticResource MauXanhChuDao}" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>
