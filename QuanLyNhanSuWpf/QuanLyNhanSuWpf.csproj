@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="PresentationFramework.Fluent" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
