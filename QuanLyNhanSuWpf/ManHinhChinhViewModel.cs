@@ -149,7 +149,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         SuaThongTinTaiKhoanLenh = new LenhGiaoDien(_ => SuaThongTinTaiKhoan(), _ => TaiKhoanDangChon is not null && CoQuyenCaiDatTaiKhoan);
         LuuTaiKhoanLenh = new LenhGiaoDien(async _ => await LuuTaiKhoan(), _ => CoQuyenCaiDatTaiKhoan);
         HuySuaTaiKhoanLenh = new LenhGiaoDien(_ => TaoMoiTaiKhoan());
-        DatLaiMatKhauLenh = new LenhGiaoDien(async _ => await DatLaiMatKhau(), _ => TaiKhoanDangChon is not null);
+        DatLaiMatKhauLenh = new LenhGiaoDien(async _ => await DatLaiMatKhauTheoBieuMau(), _ => TaiKhoanDangChon is not null);
         SaoLuuDuLieuLenh = new LenhGiaoDien(_ => SaoLuuDuLieu());
         PhucHoiDuLieuLenh = new LenhGiaoDien(_ => PhucHoiDuLieu());
 
@@ -3167,7 +3167,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             try
             {
                 await khoDuLieu.LuuTaiKhoanAsync(BieuMauTaiKhoan, TenDangNhap);
-                await TaiDanhSachTaiKhoan();
+                await TaiDanhSachTaiKhoan(BieuMauTaiKhoan.TenDangNhap);
             }
             catch (Exception loi)
             {
@@ -3233,20 +3233,41 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         ThemThongBao("Cập nhật tài khoản", $"{TaiKhoanDangChon.TenDangNhap} đã chuyển sang trạng thái {trangThaiMoi}.", "Cài đặt tài khoản");
     }
 
-    private async Task DatLaiMatKhau()
+    private async Task DatLaiMatKhauTheoBieuMau()
     {
         if (TaiKhoanDangChon is null) return;
-        var matKhauTamThoi = CauHinhUngDung.LayMatKhauKhoiTao();
-        if (DangDungSql)
+
+        if (!DangDungSql)
         {
-            await khoDuLieu.DatLaiMatKhauAsync(TaiKhoanDangChon.TenDangNhap, matKhauTamThoi, TenDangNhap);
+            MessageBox.Show("Đổi mật khẩu cần kết nối SQL Server để ghi vào bảng HR_Users.", "Chưa kết nối SQL Server", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
         }
 
-        MessageBox.Show($"Mật khẩu tạm thời của {TaiKhoanDangChon.TenDangNhap} đã được đặt theo HRM_INITIAL_PASSWORD.", "Đặt lại mật khẩu", MessageBoxButton.OK, MessageBoxImage.Information);
+        var dangSuaTaiKhoanDangChon = BieuMauTaiKhoan.DangSua
+            && string.Equals(BieuMauTaiKhoan.TenDangNhapGoc, TaiKhoanDangChon.TenDangNhap, StringComparison.OrdinalIgnoreCase);
+        var matKhauTrongBieuMau = dangSuaTaiKhoanDangChon ? BieuMauTaiKhoan.MatKhauMoi.Trim() : "";
+        var dungMatKhauNhapTay = !string.IsNullOrWhiteSpace(matKhauTrongBieuMau);
+        var matKhauMoi = dungMatKhauNhapTay ? matKhauTrongBieuMau : CauHinhUngDung.LayMatKhauKhoiTao();
+
+        try
+        {
+            await khoDuLieu.DatLaiMatKhauAsync(TaiKhoanDangChon.TenDangNhap, matKhauMoi, TenDangNhap);
+        }
+        catch (Exception loi)
+        {
+            MessageBox.Show($"Không thể đặt lại mật khẩu: {loi.Message}", "Lỗi dữ liệu tài khoản", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        BieuMauTaiKhoan.MatKhauMoi = "";
+        var thongBao = dungMatKhauNhapTay
+            ? $"Mật khẩu của {TaiKhoanDangChon.TenDangNhap} đã được cập nhật theo ô Mật khẩu mới."
+            : $"Mật khẩu tạm thời của {TaiKhoanDangChon.TenDangNhap} đã được đặt theo HRM_INITIAL_PASSWORD.";
+        MessageBox.Show(thongBao, "Đặt lại mật khẩu", MessageBoxButton.OK, MessageBoxImage.Information);
         ThemThongBao("Đặt lại mật khẩu", $"Đã đặt lại mật khẩu cho {TaiKhoanDangChon.TenDangNhap}.", "Cài đặt tài khoản");
     }
 
-    private async Task TaiDanhSachTaiKhoan()
+    private async Task TaiDanhSachTaiKhoan(string? tenDangNhapCanChon = null)
     {
         if (!DangDungSql)
         {
@@ -3262,8 +3283,9 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
                 CacTaiKhoanHeThong.Add(taiKhoan);
             }
 
+            var tenCanChon = string.IsNullOrWhiteSpace(tenDangNhapCanChon) ? TenDangNhap : tenDangNhapCanChon;
             TaiKhoanDangChon = CacTaiKhoanHeThong.FirstOrDefault(x =>
-                string.Equals(x.TenDangNhap, TenDangNhap, StringComparison.OrdinalIgnoreCase));
+                string.Equals(x.TenDangNhap, tenCanChon, StringComparison.OrdinalIgnoreCase));
             BaoThayDoi(nameof(CacTaiKhoanDangHoatDong));
         }
         catch (Exception loi)

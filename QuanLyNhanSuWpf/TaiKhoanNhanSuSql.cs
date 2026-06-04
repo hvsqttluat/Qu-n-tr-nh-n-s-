@@ -37,8 +37,6 @@ public static class TaiKhoanNhanSuSql
                 ON Dich.Username = Nguon.Username
             WHEN MATCHED THEN
                 UPDATE SET
-                    FullName = Nguon.FullName,
-                    RoleName = Nguon.RoleName,
                     IsActive = Nguon.IsActive
             WHEN NOT MATCHED THEN
                 INSERT (Username, FullName, RoleName, PasswordHash, PasswordSalt, PasswordIterations, IsActive, RequirePasswordChange)

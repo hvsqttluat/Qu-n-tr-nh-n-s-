@@ -105,7 +105,6 @@ public class KhoXacThuc
             var daCo = await TaiKhoanTonTaiAsync(ketNoi, taiKhoan.Username);
             if (daCo)
             {
-                await CapNhatTaiKhoanMacDinhAsync(ketNoi, taiKhoan);
                 continue;
             }
 
@@ -122,23 +121,6 @@ public class KhoXacThuc
             lenh.Parameters.AddWithValue("@PasswordIterations", matKhau.Iterations);
             await lenh.ExecuteNonQueryAsync();
         }
-    }
-
-    private static async Task CapNhatTaiKhoanMacDinhAsync(SqlConnection ketNoi, TaiKhoanMacDinhDto taiKhoan)
-    {
-        await using var lenh = new SqlCommand("""
-            UPDATE dbo.HR_Users
-            SET FullName=@FullName,
-                RoleName=CASE
-                    WHEN LOWER(@Username)=N'admin' THEN @RoleName
-                    ELSE RoleName
-                END
-            WHERE Username=@Username
-            """, ketNoi);
-        lenh.Parameters.AddWithValue("@Username", taiKhoan.Username);
-        lenh.Parameters.AddWithValue("@FullName", taiKhoan.FullName);
-        lenh.Parameters.AddWithValue("@RoleName", taiKhoan.RoleName);
-        await lenh.ExecuteNonQueryAsync();
     }
 
     private static async Task<bool> TaiKhoanTonTaiAsync(SqlConnection ketNoi, string tenDangNhap)

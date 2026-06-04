@@ -1455,6 +1455,11 @@
                                                             <TextBlock Text="{Binding BieuMauTaiKhoan.TieuDe}" Style="{StaticResource TieuDeKhuVuc}"/>
                                                             <TextBlock Text="Nhập thông tin tài khoản, vai trò và mật khẩu mới nếu cần đổi." Style="{StaticResource MoTaNho}" Margin="0,4,0,16"/>
 
+                                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                                                <Button Content="Lưu tài khoản" Command="{Binding LuuTaiKhoanLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
+                                                                <Button Content="Hủy" Command="{Binding HuySuaTaiKhoanLenh}" Style="{StaticResource NutPhu}"/>
+                                                            </StackPanel>
+
                                                             <TextBlock Text="TÊN ĐĂNG NHẬP" Style="{StaticResource NhanTruong}"/>
                                                             <TextBox Text="{Binding BieuMauTaiKhoan.TenDangNhap, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource OThongTin}" Margin="0,0,0,12"/>
 
@@ -1469,10 +1474,6 @@
 
                                                             <CheckBox Content="Đang hoạt động" IsChecked="{Binding BieuMauTaiKhoan.DangHoatDong}" Margin="0,0,0,18"/>
 
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Button Content="Lưu tài khoản" Command="{Binding LuuTaiKhoanLenh}" Style="{StaticResource NutChinh}" Margin="0,0,8,0"/>
-                                                                <Button Content="Hủy" Command="{Binding HuySuaTaiKhoanLenh}" Style="{StaticResource NutPhu}"/>
-                                                            </StackPanel>
                                                         </StackPanel>
                                                     </Border>
                                                 </Grid>
