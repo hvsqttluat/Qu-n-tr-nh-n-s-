@@ -44,6 +44,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private int tabNhanVienDangChon;
     private string tuKhoaBangLuong = "";
     private string phongBanBangLuongDangChon = TatCaPhongBan;
+    private string kyTongHopLuongDangChon = "Tháng này";
     private string tuKhoaChamCong = "";
     private string phongBanChamCongDangChon = TatCaPhongBan;
     private string trangThaiChamCongDangChon = TatCaTrangThaiChamCong;
@@ -74,6 +75,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     private DanhGia? danhGiaDangChon;
     private PhieuLuong? phieuLuongDangChon;
     private TaiKhoanHeThong? taiKhoanDangChon;
+    private BieuMauTaiKhoan bieuMauTaiKhoan = new();
     private BieuMauUngVien bieuMauUngVien = new();
     private BieuMauNghiPhep bieuMauNghiPhep = new();
     private BieuMauDanhGia bieuMauDanhGia = new();
@@ -142,7 +144,11 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         XuatBaoCaoNghiPhepLenh = new LenhGiaoDien(_ => XuatBaoCaoNghiPhep());
         XuatBaoCaoLuongLenh = new LenhGiaoDien(_ => XuatBaoCaoLuong(), _ => CoQuyenXuLyBangLuong);
         TaoTaiKhoanMauLenh = new LenhGiaoDien(async _ => await TaoTaiKhoanMau());
+        ThemTaiKhoanLenh = new LenhGiaoDien(_ => TaoMoiTaiKhoan(), _ => CoQuyenCaiDatTaiKhoan);
         KhoaMoTaiKhoanLenh = new LenhGiaoDien(async _ => await KhoaMoTaiKhoan(), _ => TaiKhoanDangChon is not null);
+        SuaThongTinTaiKhoanLenh = new LenhGiaoDien(_ => SuaThongTinTaiKhoan(), _ => TaiKhoanDangChon is not null && CoQuyenCaiDatTaiKhoan);
+        LuuTaiKhoanLenh = new LenhGiaoDien(async _ => await LuuTaiKhoan(), _ => CoQuyenCaiDatTaiKhoan);
+        HuySuaTaiKhoanLenh = new LenhGiaoDien(_ => TaoMoiTaiKhoan());
         DatLaiMatKhauLenh = new LenhGiaoDien(async _ => await DatLaiMatKhau(), _ => TaiKhoanDangChon is not null);
         SaoLuuDuLieuLenh = new LenhGiaoDien(_ => SaoLuuDuLieu());
         PhucHoiDuLieuLenh = new LenhGiaoDien(_ => PhucHoiDuLieu());
@@ -215,7 +221,11 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public ICommand XuatBaoCaoNghiPhepLenh { get; }
     public ICommand XuatBaoCaoLuongLenh { get; }
     public ICommand TaoTaiKhoanMauLenh { get; }
+    public ICommand ThemTaiKhoanLenh { get; }
     public ICommand KhoaMoTaiKhoanLenh { get; }
+    public ICommand SuaThongTinTaiKhoanLenh { get; }
+    public ICommand LuuTaiKhoanLenh { get; }
+    public ICommand HuySuaTaiKhoanLenh { get; }
     public ICommand DatLaiMatKhauLenh { get; }
     public ICommand SaoLuuDuLieuLenh { get; }
     public ICommand PhucHoiDuLieuLenh { get; }
@@ -322,6 +332,22 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             phongBanBangLuongDangChon = giaTri;
             BaoThayDoi();
             LamMoiBoLocBangLuong();
+        }
+    }
+    public string KyTongHopLuongDangChon
+    {
+        get => kyTongHopLuongDangChon;
+        set
+        {
+            var giaTri = string.IsNullOrWhiteSpace(value) ? "Tháng này" : value;
+            if (string.Equals(kyTongHopLuongDangChon, giaTri, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            kyTongHopLuongDangChon = giaTri;
+            BaoThayDoi();
+            BaoThayDoi(nameof(TongHopLuongTheoPhongBan));
         }
     }
     public string TuKhoaChamCong
@@ -501,7 +527,8 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public NghiPhep? NghiPhepDangChon { get => nghiPhepDangChon; set { nghiPhepDangChon = value; BaoThayDoi(); LamMoiLenhNghiPhep(); } }
     public DanhGia? DanhGiaDangChon { get => danhGiaDangChon; set { danhGiaDangChon = value; BaoThayDoi(); LamMoiLenhDanhGia(); } }
     public PhieuLuong? PhieuLuongDangChon { get => phieuLuongDangChon; set { phieuLuongDangChon = value; BaoThayDoi(); (XemPhieuLuongLenh as LenhGiaoDien)?.LamMoi(); (XacNhanTraLuongLenh as LenhGiaoDien)?.LamMoi(); } }
-    public TaiKhoanHeThong? TaiKhoanDangChon { get => taiKhoanDangChon; set { taiKhoanDangChon = value; BaoThayDoi(); (KhoaMoTaiKhoanLenh as LenhGiaoDien)?.LamMoi(); (DatLaiMatKhauLenh as LenhGiaoDien)?.LamMoi(); } }
+    public TaiKhoanHeThong? TaiKhoanDangChon { get => taiKhoanDangChon; set { taiKhoanDangChon = value; BaoThayDoi(); (KhoaMoTaiKhoanLenh as LenhGiaoDien)?.LamMoi(); (SuaThongTinTaiKhoanLenh as LenhGiaoDien)?.LamMoi(); (DatLaiMatKhauLenh as LenhGiaoDien)?.LamMoi(); } }
+    public BieuMauTaiKhoan BieuMauTaiKhoan { get => bieuMauTaiKhoan; set { bieuMauTaiKhoan = value; BaoThayDoi(); } }
     public BieuMauUngVien BieuMauUngVien { get => bieuMauUngVien; set { bieuMauUngVien = value; BaoThayDoi(); } }
     public BieuMauNghiPhep BieuMauNghiPhep { get => bieuMauNghiPhep; set { bieuMauNghiPhep = value; BaoThayDoi(); } }
     public BieuMauDanhGia BieuMauDanhGia { get => bieuMauDanhGia; set { bieuMauDanhGia = value; BaoThayDoi(); } }
@@ -570,6 +597,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public IReadOnlyList<string> CacGiaiDoanUngVien { get; } = ["Mới", "Sàng lọc hồ sơ", "Phỏng vấn", "Đề nghị nhận việc"];
     public IReadOnlyList<string> CacTrangThaiChamCong { get; } = [TatCaTrangThaiChamCong, "Đang trong ca", "Đủ công", "Thiếu giờ", "Tăng ca"];
     public IReadOnlyList<string> CacTrangThaiDanhGia { get; } = ["Nháp", "Đang đánh giá", "Hoàn tất"];
+    public IReadOnlyList<string> CacVaiTroTaiKhoan { get; } = ["Admin", "Giám đốc", "Trưởng phòng", "Nhân viên"];
     public decimal TongLuongChoTra => DuLieu.PhieuLuong.Where(p => CoTheXemTheoTen(p.NhanVien) && !p.TrangThai.Contains("Đã trả", StringComparison.OrdinalIgnoreCase)).Sum(p => p.ThucLanh);
     public int SoPhieuLuongChoTra => DuLieu.PhieuLuong.Count(p => CoTheXemTheoTen(p.NhanVien) && !p.TrangThai.Contains("Đã trả", StringComparison.OrdinalIgnoreCase));
     public string NhanVienThaoTac => NhanVienDangChon is null ? "Chưa chọn nhân viên" : $"{NhanVienDangChon.HoTen} - {NhanVienDangChon.ViTri}";
@@ -629,6 +657,12 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
     public int SoPhieuLuongDaLoc => BangLuongNhanVienHienThi.Count;
     public decimal TongThucLanhDaLoc => BangLuongNhanVienHienThi.Sum(p => Math.Max(0, p.ThucLanh));
     public string LuongCaoBangLuongHienThi => TaoMoTaLuongCao(LayPhieuLuongCaoNhat(BangLuongNhanVienHienThi));
+    public IReadOnlyList<TongHopLuongPhongBan> TongHopLuongTheoPhongBan => TaoTongHopLuongTheoPhongBan().ToList();
+    public IEnumerable<TaiKhoanHeThong> CacTaiKhoanDangHoatDong => CacTaiKhoanHeThong
+        .Where(taiKhoan => taiKhoan.TrangThai.Contains("Đang hoạt động", StringComparison.OrdinalIgnoreCase)
+            || taiKhoan.TrangThai.Contains("Phiên hiện tại", StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(taiKhoan => string.Equals(taiKhoan.TenDangNhap, TenDangNhap, StringComparison.OrdinalIgnoreCase))
+        .ThenByDescending(taiKhoan => taiKhoan.LanDangNhapGanNhat);
     public int SoChamCongDaLoc => LayChamCongDaLoc().Count();
     public decimal TongGioChamCongDaLoc => LayChamCongDaLoc().Sum(TinhSoGioChamCong);
     public decimal TongNgayCongChamCongDaLoc => Math.Round(TongGioChamCongDaLoc / QuyTacNghiepVuNhanSu.SoGioMotNgayCong, 2);
@@ -1399,6 +1433,30 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
             .ThenBy(phieuLuong => phieuLuong.NhanVien);
     }
 
+    private bool ThuocKyTongHopLuong(string kyLuong)
+    {
+        return DateTime.TryParse($"{kyLuong}-01", out var ngayLuong)
+            && ThuocKy(ngayLuong, KyTongHopLuongDangChon);
+    }
+
+    private IEnumerable<TongHopLuongPhongBan> TaoTongHopLuongTheoPhongBan()
+    {
+        return DuLieu.PhieuLuong
+            .Where(phieuLuong => LocPhieuLuong(phieuLuong) && ThuocKyTongHopLuong(phieuLuong.KyLuong))
+            .Select(phieuLuong => new { PhieuLuong = phieuLuong, NhanVien = LayNhanVienTheoTen(phieuLuong.NhanVien) })
+            .GroupBy(x => x.NhanVien?.PhongBan ?? "Chưa rõ", StringComparer.OrdinalIgnoreCase)
+            .Select(g => new TongHopLuongPhongBan(
+                g.Key,
+                KyTongHopLuongDangChon,
+                g.Count(),
+                g.Sum(x => x.PhieuLuong.LuongCoBan),
+                g.Sum(x => x.PhieuLuong.PhuCap),
+                g.Sum(x => x.PhieuLuong.KhauTru),
+                g.Sum(x => x.PhieuLuong.ThucLanh)))
+            .OrderBy(x => LayThuTuPhongBan(x.PhongBan))
+            .ThenBy(x => x.PhongBan);
+    }
+
     private PhieuLuong? LayPhieuLuongCaoNhat(IEnumerable<PhieuLuong> phieuLuongs)
     {
         return phieuLuongs
@@ -1457,6 +1515,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         BaoThayDoi(nameof(SoPhieuLuongDaLoc));
         BaoThayDoi(nameof(TongThucLanhDaLoc));
         BaoThayDoi(nameof(LuongCaoBangLuongHienThi));
+        BaoThayDoi(nameof(TongHopLuongTheoPhongBan));
         (XemPhieuLuongLenh as LenhGiaoDien)?.LamMoi();
         (XacNhanTraLuongLenh as LenhGiaoDien)?.LamMoi();
     }
@@ -3058,6 +3117,104 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         ThemThongBao("Đồng bộ tài khoản", $"Đã đồng bộ {soTaiKhoan} tài khoản theo mã nhân viên.", "Cài đặt tài khoản");
     }
 
+    private void TaoMoiTaiKhoan()
+    {
+        BieuMauTaiKhoan.XoaTrang();
+    }
+
+    private void SuaThongTinTaiKhoan()
+    {
+        if (TaiKhoanDangChon is null) return;
+
+        BieuMauTaiKhoan.TenDangNhapGoc = TaiKhoanDangChon.TenDangNhap;
+        BieuMauTaiKhoan.TenDangNhap = TaiKhoanDangChon.TenDangNhap;
+        BieuMauTaiKhoan.HoTen = TaiKhoanDangChon.HoTen;
+        BieuMauTaiKhoan.VaiTro = TaiKhoanDangChon.VaiTro;
+        BieuMauTaiKhoan.MatKhauMoi = "";
+        BieuMauTaiKhoan.DangHoatDong = TaiKhoanDangChon.TrangThai != "Tạm khóa";
+        BieuMauTaiKhoan.DangSua = true;
+    }
+
+    private async Task LuuTaiKhoan()
+    {
+        BieuMauTaiKhoan.TenDangNhap = BieuMauTaiKhoan.TenDangNhap.Trim();
+        BieuMauTaiKhoan.HoTen = BieuMauTaiKhoan.HoTen.Trim();
+        BieuMauTaiKhoan.MatKhauMoi = BieuMauTaiKhoan.MatKhauMoi.Trim();
+
+        if (string.IsNullOrWhiteSpace(BieuMauTaiKhoan.TenDangNhap) || string.IsNullOrWhiteSpace(BieuMauTaiKhoan.HoTen))
+        {
+            MessageBox.Show("Vui lòng nhập tên đăng nhập và họ tên tài khoản.", "Thiếu thông tin tài khoản", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!BieuMauTaiKhoan.DangSua
+            && CacTaiKhoanHeThong.Any(x => string.Equals(x.TenDangNhap, BieuMauTaiKhoan.TenDangNhap, StringComparison.OrdinalIgnoreCase)))
+        {
+            MessageBox.Show("Tên đăng nhập đã tồn tại trong danh sách tài khoản.", "Trùng tài khoản", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (BieuMauTaiKhoan.DangSua
+            && !string.Equals(BieuMauTaiKhoan.TenDangNhapGoc, BieuMauTaiKhoan.TenDangNhap, StringComparison.OrdinalIgnoreCase)
+            && CacTaiKhoanHeThong.Any(x => string.Equals(x.TenDangNhap, BieuMauTaiKhoan.TenDangNhap, StringComparison.OrdinalIgnoreCase)))
+        {
+            MessageBox.Show("Tên đăng nhập mới đã tồn tại trong danh sách tài khoản.", "Trùng tài khoản", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (DangDungSql)
+        {
+            try
+            {
+                await khoDuLieu.LuuTaiKhoanAsync(BieuMauTaiKhoan, TenDangNhap);
+                await TaiDanhSachTaiKhoan();
+            }
+            catch (Exception loi)
+            {
+                MessageBox.Show($"Không thể lưu tài khoản: {loi.Message}", "Lỗi dữ liệu tài khoản", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+        }
+        else
+        {
+            CapNhatTaiKhoanCucBo();
+        }
+
+        ThemThongBao(
+            BieuMauTaiKhoan.DangSua ? "Sửa thông tin tài khoản" : "Thêm mới tài khoản",
+            $"{BieuMauTaiKhoan.TenDangNhap} đã được lưu thông tin tài khoản.",
+            "Cài đặt tài khoản");
+        TaoMoiTaiKhoan();
+        BaoThayDoi(nameof(CacTaiKhoanDangHoatDong));
+    }
+
+    private void CapNhatTaiKhoanCucBo()
+    {
+        var taiKhoan = new TaiKhoanHeThong(
+            BieuMauTaiKhoan.TenDangNhap,
+            BieuMauTaiKhoan.HoTen,
+            BieuMauTaiKhoan.VaiTro,
+            LayMoTaQuyen(BieuMauTaiKhoan.VaiTro),
+            BieuMauTaiKhoan.DangHoatDong ? "Đang hoạt động" : "Tạm khóa",
+            BieuMauTaiKhoan.DangSua ? TaiKhoanDangChon?.LanDangNhapGanNhat ?? DateTime.MinValue : DateTime.MinValue);
+
+        var viTri = BieuMauTaiKhoan.DangSua
+            ? CacTaiKhoanHeThong
+                .Select((giaTri, chiSo) => new { giaTri, chiSo })
+                .FirstOrDefault(x => string.Equals(x.giaTri.TenDangNhap, BieuMauTaiKhoan.TenDangNhapGoc, StringComparison.OrdinalIgnoreCase))?.chiSo ?? -1
+            : -1;
+
+        if (viTri >= 0)
+        {
+            CacTaiKhoanHeThong[viTri] = taiKhoan;
+            TaiKhoanDangChon = CacTaiKhoanHeThong[viTri];
+            return;
+        }
+
+        CacTaiKhoanHeThong.Insert(0, taiKhoan);
+        TaiKhoanDangChon = taiKhoan;
+    }
+
     private async Task KhoaMoTaiKhoan()
     {
         if (TaiKhoanDangChon is null) return;
@@ -3072,6 +3229,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
         CacTaiKhoanHeThong[viTri] = TaiKhoanDangChon with { TrangThai = trangThaiMoi };
         TaiKhoanDangChon = CacTaiKhoanHeThong[viTri];
+        BaoThayDoi(nameof(CacTaiKhoanDangHoatDong));
         ThemThongBao("Cập nhật tài khoản", $"{TaiKhoanDangChon.TenDangNhap} đã chuyển sang trạng thái {trangThaiMoi}.", "Cài đặt tài khoản");
     }
 
@@ -3106,6 +3264,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
 
             TaiKhoanDangChon = CacTaiKhoanHeThong.FirstOrDefault(x =>
                 string.Equals(x.TenDangNhap, TenDangNhap, StringComparison.OrdinalIgnoreCase));
+            BaoThayDoi(nameof(CacTaiKhoanDangHoatDong));
         }
         catch (Exception loi)
         {
@@ -3629,6 +3788,7 @@ public class ManHinhChinhViewModel : DoiTuongThongBao
         BaoThayDoi(nameof(TongQuyLuong));
         BaoThayDoi(nameof(TongLuongChoTra));
         BaoThayDoi(nameof(SoPhieuLuongChoTra));
+        BaoThayDoi(nameof(TongHopLuongTheoPhongBan));
         BaoThayDoi(nameof(SoChamCongHomNay));
         BaoThayDoi(nameof(TongGioCongHomNay));
         BaoThayDoi(nameof(SoChamCongTrongKyBaoCao));

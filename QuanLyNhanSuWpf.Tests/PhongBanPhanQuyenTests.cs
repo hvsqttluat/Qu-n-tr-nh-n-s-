@@ -338,6 +338,71 @@ public sealed class PhongBanPhanQuyenTests
         Assert.AreEqual(7, ungVienSauLuu.MaUngVien);
     }
 
+    [TestMethod]
+    public async Task CapNhatTaiKhoanCucBoThemVaSuaDungDong()
+    {
+        var viewModel = new ManHinhChinhViewModel(new PhienDangNhap("admin", "Quản trị hệ thống", "Admin"));
+
+        viewModel.BieuMauTaiKhoan = new BieuMauTaiKhoan
+        {
+            TenDangNhap = "tester",
+            HoTen = "Người kiểm thử",
+            VaiTro = "Nhân viên",
+            DangHoatDong = true
+        };
+
+        await GoiRiengAsync(viewModel, "CapNhatTaiKhoanCucBo");
+
+        var taiKhoanMoi = viewModel.CacTaiKhoanHeThong.Single(x => x.TenDangNhap == "tester");
+        Assert.AreEqual("Người kiểm thử", taiKhoanMoi.HoTen);
+        Assert.AreEqual("Đang hoạt động", taiKhoanMoi.TrangThai);
+
+        viewModel.TaiKhoanDangChon = taiKhoanMoi;
+        viewModel.BieuMauTaiKhoan = new BieuMauTaiKhoan
+        {
+            TenDangNhapGoc = "tester",
+            TenDangNhap = "tester",
+            HoTen = "Người kiểm thử đã sửa",
+            VaiTro = "Trưởng phòng",
+            DangHoatDong = false,
+            DangSua = true
+        };
+
+        await GoiRiengAsync(viewModel, "CapNhatTaiKhoanCucBo");
+
+        Assert.AreEqual(1, viewModel.CacTaiKhoanHeThong.Count(x => x.TenDangNhap == "tester"));
+        var taiKhoanDaSua = viewModel.CacTaiKhoanHeThong.Single(x => x.TenDangNhap == "tester");
+        Assert.AreEqual("Người kiểm thử đã sửa", taiKhoanDaSua.HoTen);
+        Assert.AreEqual("Trưởng phòng", taiKhoanDaSua.VaiTro);
+        Assert.AreEqual("Tạm khóa", taiKhoanDaSua.TrangThai);
+        Assert.IsFalse(viewModel.CacTaiKhoanDangHoatDong.Any(x => x.TenDangNhap == "tester"));
+    }
+
+    [TestMethod]
+    public void TongHopLuongTheoPhongBanLocDungKy()
+    {
+        var viewModel = new ManHinhChinhViewModel(new PhienDangNhap("admin", "Quản trị hệ thống", "Admin"));
+        var phongBan = new PhongBan(99, "Phòng Kiểm thử", "Chưa phân công");
+        var kyHienTai = DateTime.Today.ToString("yyyy-MM");
+        var kyCu = DateTime.Today.AddYears(-1).ToString("yyyy-MM");
+
+        viewModel.DuLieu.PhongBan.Add(phongBan);
+        viewModel.DuLieu.NhanVien.Add(new NhanVien { HoTen = "Người A", MaPhongBan = 99, PhongBan = phongBan.TenPhongBan, DangLamViec = true });
+        viewModel.DuLieu.NhanVien.Add(new NhanVien { HoTen = "Người B", MaPhongBan = 99, PhongBan = phongBan.TenPhongBan, DangLamViec = true });
+        viewModel.DuLieu.PhieuLuong.Add(new PhieuLuong("Người A", kyHienTai, 10_000_000, 1_000_000, 500_000, 10_500_000, "Nháp"));
+        viewModel.DuLieu.PhieuLuong.Add(new PhieuLuong("Người B", kyHienTai, 12_000_000, 1_200_000, 600_000, 12_600_000, "Nháp"));
+        viewModel.DuLieu.PhieuLuong.Add(new PhieuLuong("Người A", kyCu, 8_000_000, 800_000, 400_000, 8_400_000, "Nháp"));
+
+        viewModel.KyTongHopLuongDangChon = "Tháng này";
+
+        var tongHop = viewModel.TongHopLuongTheoPhongBan.Single(x => x.PhongBan == phongBan.TenPhongBan);
+        Assert.AreEqual(2, tongHop.SoPhieu);
+        Assert.AreEqual(22_000_000, tongHop.TongLuongCoBan);
+        Assert.AreEqual(2_200_000, tongHop.TongPhuCap);
+        Assert.AreEqual(1_100_000, tongHop.TongKhauTru);
+        Assert.AreEqual(23_100_000, tongHop.TongThucLanh);
+    }
+
     private static async Task GoiRiengAsync(ManHinhChinhViewModel viewModel, string tenPhuongThuc)
     {
         var method = typeof(ManHinhChinhViewModel).GetMethod(

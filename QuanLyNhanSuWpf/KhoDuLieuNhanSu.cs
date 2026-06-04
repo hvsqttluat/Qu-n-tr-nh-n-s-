@@ -895,6 +895,58 @@ public class KhoDuLieuNhanSu
         return new TaiKhoanHeThong(tenDangNhap, hoTen, "Nhân viên", LayMoTaQuyen("Nhân viên"), "Đang hoạt động", DateTime.MinValue);
     }
 
+    public async Task LuuTaiKhoanAsync(BieuMauTaiKhoan bieuMau, string nguoiThucHien)
+    {
+        await using var ketNoi = new SqlConnection(chuoiKetNoi);
+        await ketNoi.OpenAsync();
+        await SoDoQuanTriSql.DamBaoAsync(ketNoi);
+
+        var dangSua = !string.IsNullOrWhiteSpace(bieuMau.TenDangNhapGoc);
+        if (dangSua)
+        {
+            await using var lenh = new SqlCommand("""
+                UPDATE dbo.HR_Users
+                SET Username=@Username,
+                    FullName=@FullName,
+                    RoleName=@RoleName,
+                    IsActive=@IsActive
+                WHERE Username=@UsernameGoc
+                """, ketNoi);
+            lenh.Parameters.AddWithValue("@Username", bieuMau.TenDangNhap.Trim());
+            lenh.Parameters.AddWithValue("@FullName", bieuMau.HoTen.Trim());
+            lenh.Parameters.AddWithValue("@RoleName", bieuMau.VaiTro);
+            lenh.Parameters.AddWithValue("@IsActive", bieuMau.DangHoatDong);
+            lenh.Parameters.AddWithValue("@UsernameGoc", bieuMau.TenDangNhapGoc);
+            await lenh.ExecuteNonQueryAsync();
+
+            if (!string.IsNullOrWhiteSpace(bieuMau.MatKhauMoi))
+            {
+                await DatLaiMatKhauNoiBoAsync(ketNoi, bieuMau.TenDangNhap.Trim(), bieuMau.MatKhauMoi.Trim(), yeuCauDoiMatKhau: true);
+            }
+
+            await GhiNhatKyAsync(nguoiThucHien, "UpdateUser", "HR_Users", bieuMau.TenDangNhap.Trim(), $"Cap nhat thong tin tai khoan {bieuMau.TenDangNhap.Trim()}.");
+            return;
+        }
+
+        var matKhau = BaoMatMatKhau.BamMatKhau(string.IsNullOrWhiteSpace(bieuMau.MatKhauMoi)
+            ? CauHinhUngDung.LayMatKhauKhoiTao()
+            : bieuMau.MatKhauMoi.Trim());
+        await using var lenhThem = new SqlCommand("""
+            INSERT INTO dbo.HR_Users(Username, FullName, RoleName, PasswordHash, PasswordSalt, PasswordIterations, IsActive, RequirePasswordChange)
+            VALUES(@Username, @FullName, @RoleName, @PasswordHash, @PasswordSalt, @PasswordIterations, @IsActive, 1)
+            """, ketNoi);
+        lenhThem.Parameters.AddWithValue("@Username", bieuMau.TenDangNhap.Trim());
+        lenhThem.Parameters.AddWithValue("@FullName", bieuMau.HoTen.Trim());
+        lenhThem.Parameters.AddWithValue("@RoleName", bieuMau.VaiTro);
+        lenhThem.Parameters.AddWithValue("@PasswordHash", matKhau.HashBase64);
+        lenhThem.Parameters.AddWithValue("@PasswordSalt", matKhau.SaltBase64);
+        lenhThem.Parameters.AddWithValue("@PasswordIterations", matKhau.Iterations);
+        lenhThem.Parameters.AddWithValue("@IsActive", bieuMau.DangHoatDong);
+        await lenhThem.ExecuteNonQueryAsync();
+
+        await GhiNhatKyAsync(nguoiThucHien, "CreateUser", "HR_Users", bieuMau.TenDangNhap.Trim(), $"Tao tai khoan {bieuMau.TenDangNhap.Trim()}.");
+    }
+
     public async Task KhoaMoTaiKhoanAsync(string tenDangNhap, bool kichHoat, string nguoiThucHien)
     {
         await using var ketNoi = new SqlConnection(chuoiKetNoi);
@@ -939,6 +991,27 @@ public class KhoDuLieuNhanSu
         await lenh.ExecuteNonQueryAsync();
 
         await GhiNhatKyAsync(nguoiThucHien, "ResetPassword", "HR_Users", tenDangNhap, $"Dat lai mat khau cho {tenDangNhap}.");
+    }
+
+    private static async Task DatLaiMatKhauNoiBoAsync(SqlConnection ketNoi, string tenDangNhap, string matKhauMoi, bool yeuCauDoiMatKhau)
+    {
+        var matKhau = BaoMatMatKhau.BamMatKhau(matKhauMoi);
+        await using var lenh = new SqlCommand("""
+            UPDATE dbo.HR_Users
+            SET PasswordHash=@PasswordHash,
+                PasswordSalt=@PasswordSalt,
+                PasswordIterations=@PasswordIterations,
+                RequirePasswordChange=@RequirePasswordChange,
+                FailedLoginCount=0,
+                LockoutUntilAt=NULL
+            WHERE Username=@Username
+            """, ketNoi);
+        lenh.Parameters.AddWithValue("@PasswordHash", matKhau.HashBase64);
+        lenh.Parameters.AddWithValue("@PasswordSalt", matKhau.SaltBase64);
+        lenh.Parameters.AddWithValue("@PasswordIterations", matKhau.Iterations);
+        lenh.Parameters.AddWithValue("@RequirePasswordChange", yeuCauDoiMatKhau);
+        lenh.Parameters.AddWithValue("@Username", tenDangNhap);
+        await lenh.ExecuteNonQueryAsync();
     }
 
     public async Task GhiNhatKyAsync(string nguoiThucHien, string hanhDong, string thucThe, string maThucThe, string chiTiet)

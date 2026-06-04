@@ -176,6 +176,7 @@ public record DanhGia(string NhanVien, string NguoiDanhGia, string KyDanhGia, de
 public record PhieuLuong(string NhanVien, string KyLuong, decimal LuongCoBan, decimal PhuCap, decimal KhauTru, decimal ThucLanh, string TrangThai);
 public record UngVien(string HoTen, string ViTri, string Email, string DienThoai, string GiaiDoan, int MaUngVien = 0);
 public record DiemLuongThang(string Thang, decimal TongLuong, int TongNhanVien);
+public record TongHopLuongPhongBan(string PhongBan, string Ky, int SoPhieu, decimal TongLuongCoBan, decimal TongPhuCap, decimal TongKhauTru, decimal TongThucLanh);
 public record MucUngVienTheoViTri(string TenViTri, int SoLuong);
 public record DongTraCuuNhanSu(
     int ThuTuCapBac,
@@ -213,6 +214,37 @@ public record PhienDangNhap(string TenDangNhap, string HoTen, string VaiTro)
 }
 
 public record TaiKhoanHeThong(string TenDangNhap, string HoTen, string VaiTro, string QuyenHan, string TrangThai, DateTime LanDangNhapGanNhat);
+
+public class BieuMauTaiKhoan : DoiTuongThongBao
+{
+    private string tenDangNhapGoc = "";
+    private string tenDangNhap = "";
+    private string hoTen = "";
+    private string vaiTro = "Nhân viên";
+    private string matKhauMoi = "";
+    private bool dangHoatDong = true;
+    private bool dangSua;
+
+    public string TenDangNhapGoc { get => tenDangNhapGoc; set { tenDangNhapGoc = value; BaoThayDoi(); } }
+    public string TenDangNhap { get => tenDangNhap; set { tenDangNhap = value; BaoThayDoi(); } }
+    public string HoTen { get => hoTen; set { hoTen = value; BaoThayDoi(); } }
+    public string VaiTro { get => vaiTro; set { vaiTro = value; BaoThayDoi(); } }
+    public string MatKhauMoi { get => matKhauMoi; set { matKhauMoi = value; BaoThayDoi(); } }
+    public bool DangHoatDong { get => dangHoatDong; set { dangHoatDong = value; BaoThayDoi(); } }
+    public bool DangSua { get => dangSua; set { dangSua = value; BaoThayDoi(); BaoThayDoi(nameof(TieuDe)); } }
+    public string TieuDe => DangSua ? "Sửa thông tin tài khoản" : "Thêm mới tài khoản";
+
+    public void XoaTrang()
+    {
+        TenDangNhapGoc = "";
+        TenDangNhap = "";
+        HoTen = "";
+        VaiTro = "Nhân viên";
+        MatKhauMoi = "";
+        DangHoatDong = true;
+        DangSua = false;
+    }
+}
 
 public class ThongBaoHeThong : DoiTuongThongBao
 {
